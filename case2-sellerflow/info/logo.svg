@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="SellerFlow">
+  <rect width="64" height="64" rx="16" fill="#0B3B36"/>
+  <path d="M16 42l10-11 8 7 14-16" fill="none" stroke="#C6F24E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M39 22h9v9" fill="none" stroke="#C6F24E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="16" cy="42" r="3.4" fill="#0FA37F"/>
+</svg>

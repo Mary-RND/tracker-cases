@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FieldOps — заявки и выездные специалисты</title>
+<meta name="theme-color" content="#0F2742">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="info/logo.svg">
+<style>
+  :root{
+    --navy:#0F2742; --blue:#1D4ED8; --sky:#3B82F6; --orange:#F97316;
+    --green:#16A34A; --red:#DC2626; --paper:#F1F5F9; --card:#fff;
+    --line:#E2E8F0; --muted:#64748B; --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif; background:var(--paper); color:var(--navy); font-size:14px; -webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  h1,h2,h3,h4{margin:0;font-family:Manrope,Inter,sans-serif;letter-spacing:-.02em}
+  .num{font-variant-numeric:tabular-nums}
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+  .side{background:var(--navy);color:#C7D6E8;padding:20px 12px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;gap:10px;align-items:center;padding:0 8px}
+  .brand img{width:34px;height:34px}
+  .brand b{color:#fff;font-size:15px;display:block;line-height:1.1;font-family:Manrope,sans-serif}
+  .brand span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#7FA0C4}
+  .nav{display:flex;flex-direction:column;gap:3px}
+  .nav button{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:9px;font-size:12.5px;font-weight:600;color:#A9C0D8;text-align:left;transition:.14s}
+  .nav button svg{width:17px;height:17px;flex:none;opacity:.85}
+  .nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nav button.on{background:#1D4ED8;color:#fff}
+  .side-foot{margin-top:auto;padding:0 8px;font-size:11px;line-height:1.6;color:#7FA0C4}
+  .side-foot a{color:#93C5FD;font-weight:700;text-decoration:none}
+  .whoami{background:rgba(255,255,255,.06);border-radius:10px;padding:10px;font-size:11.5px;line-height:1.5}
+  .whoami b{color:#fff;display:block;font-size:12.5px}
+
+  main{padding:18px 24px 40px;min-width:0}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .top h1{font-size:22px;font-weight:800}
+  .top .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .grow{flex:1}
+  .seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+  .seg button{padding:7px 11px;border-radius:8px;font-size:11.5px;font-weight:700;color:var(--muted)}
+  .seg button.on{background:var(--navy);color:#fff}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 15px;border-radius:10px;background:var(--blue);color:#fff;font-weight:700;font-size:12.5px;min-height:40px;transition:.14s}
+  .btn:hover{background:#1E40AF}
+  .btn.orange{background:var(--orange)} .btn.orange:hover{background:#EA580C}
+  .btn.green{background:var(--green)} .btn.green:hover{background:#15803D}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--navy)}
+  .btn.ghost:hover{border-color:var(--blue);color:var(--blue)}
+  .btn.sm{padding:7px 11px;font-size:11.5px;min-height:34px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+  .kpi span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  .kpi b{display:block;font-size:26px;font-family:Manrope,sans-serif;margin-top:5px}
+  .kpi small{font-size:11px;font-weight:700;color:var(--muted)}
+  .kpi small.bad{color:var(--red)}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800}
+  .card-h p{font-size:11.5px;color:var(--muted);margin:1px 0 0}
+  .card-h .btn{margin-left:auto}
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:14px;align-items:start}
+
+  /* table */
+  .tw{overflow:auto;margin:0 -16px -16px;padding:0 16px 4px}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:720px}
+  th{text-align:left;padding:8px 9px;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;font-weight:800}
+  td{padding:10px 9px;border-bottom:1px solid #EEF3F8;vertical-align:middle}
+  tbody tr:hover td{background:#F8FAFD;cursor:pointer}
+  .id{font-size:10.5px;font-weight:800;color:var(--blue);font-family:ui-monospace,monospace}
+  .nm{font-weight:700;font-size:12.5px}
+  .sub2{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
+  .st-new{background:#EFF6FF;color:#1D4ED8}
+  .st-assigned{background:#F5F3FF;color:#6D28D9}
+  .st-onway{background:#FFF7ED;color:#C2410C}
+  .st-onsite{background:#FEF9C3;color:#A16207}
+  .st-done{background:#ECFDF5;color:#15803D}
+  .st-closed{background:#F1F5F9;color:#475569}
+  .st-canceled{background:#FEF2F2;color:#B91C1C}
+  .sla{font-size:11px;font-weight:800;font-family:ui-monospace,monospace}
+  .sla.late{color:var(--red)}
+  .sla.ok{color:var(--green)}
+
+  /* mobile task cards */
+  .trips{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .trip{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;display:flex;flex-direction:column;gap:9px;position:relative}
+  .trip .hd{display:flex;align-items:center;gap:8px}
+  .trip h4{font-size:13.5px;line-height:1.35}
+  .trip .addr{font-size:11.5px;color:var(--muted);line-height:1.45}
+  .trip .row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+  .trip .btn{width:100%;margin-top:2px}
+  .trip.done{border-color:#BBF7D0;background:#F7FEF9}
+  .slot{font-size:11px;font-weight:800;background:#F1F5F9;border-radius:6px;padding:3px 7px}
+
+  .load{display:flex;flex-direction:column;gap:11px}
+  .load .l{display:flex;align-items:center;gap:9px;font-size:12px}
+  .load .l b{margin-left:auto;font-variant-numeric:tabular-nums}
+  .ava{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800;flex:none}
+  .track{height:6px;background:#EEF3F8;border-radius:4px;overflow:hidden;flex:1;min-width:50px}
+  .track i{display:block;height:100%;background:var(--blue)}
+
+  /* detail */
+  .detail{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;align-items:start}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:7px 10px;font-size:12.5px}
+  .kv dt{color:var(--muted);font-size:11.5px}
+  .kv dd{margin:0;font-weight:600}
+  .check{display:flex;flex-direction:column;gap:2px;margin:4px 0}
+  .check label{display:flex;align-items:flex-start;gap:10px;padding:9px 6px;border-radius:8px;font-size:12.5px;cursor:pointer;line-height:1.4}
+  .check label:hover{background:#F8FAFD}
+  .check input{width:20px;height:20px;accent-color:var(--green);flex:none;margin:0}
+  .check label.on span{text-decoration:line-through;color:var(--muted)}
+  .progress{height:7px;background:#EEF3F8;border-radius:4px;overflow:hidden;margin:8px 0 4px}
+  .progress i{display:block;height:100%;background:var(--green);transition:width .3s}
+  .photos{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .photos img{width:74px;height:74px;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+  .timeline{display:flex;flex-direction:column;gap:0;margin-top:4px}
+  .tl{display:flex;gap:10px;font-size:11.5px;padding-bottom:12px;position:relative}
+  .tl:before{content:"";position:absolute;left:5px;top:14px;bottom:0;width:1px;background:var(--line)}
+  .tl:last-child:before{display:none}
+  .tl i{width:11px;height:11px;border-radius:50%;background:var(--blue);flex:none;margin-top:2px;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+  .tl b{display:block;font-size:11.5px}
+  .tl span{color:var(--muted);font-size:10.5px}
+  .back{font-size:11.5px;font-weight:800;color:var(--blue);margin-bottom:10px;display:inline-flex;gap:5px;align-items:center}
+
+  .empty{padding:26px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
+  .note{font-size:11px;color:var(--muted);background:#F8FAFD;border:1px dashed var(--line);border-radius:9px;padding:10px;line-height:1.55;margin-top:12px}
+  .view{display:none} .view.on{display:block}
+
+  .backdrop{position:fixed;inset:0;background:rgba(15,39,66,.5);display:none;place-items:center;padding:16px;z-index:40}
+  .backdrop.open{display:grid}
+  .modal{background:#fff;border-radius:16px;padding:20px;width:min(520px,100%);max-height:92vh;overflow:auto;box-shadow:0 26px 70px rgba(15,39,66,.3)}
+  .modal h3{font-size:17px;margin-bottom:3px}
+  .modal .s{font-size:11.5px;color:var(--muted);margin:0 0 15px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .f{display:flex;flex-direction:column;gap:5px}
+  .f.full{grid-column:1/-1}
+  .f label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .f input,.f select,.f textarea{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:12.5px;background:#FBFCFE;outline:none}
+  .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--blue);background:#fff}
+  .mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:15px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;background:var(--navy);color:#fff;padding:11px 18px;border-radius:9px;font-size:12.5px;font-weight:600;transition:.22s;z-index:60;pointer-events:none;max-width:92vw;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:1060px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;flex-direction:row;align-items:center;gap:12px;padding:10px 12px;overflow-x:auto}
+    .side-foot,.whoami{display:none}
+    .nav{flex-direction:row}.nav button{white-space:nowrap}
+    .kpis{grid-template-columns:1fr 1fr}
+    .cols,.detail{grid-template-columns:1fr}
+    main{padding:14px 12px 34px}
+  }
+  @media (max-width:560px){
+    .fields{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr;gap:8px}
+    .kpi b{font-size:21px}
+    .top h1{font-size:18px}
+    .trips{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="info/logo.svg" alt=""><div><b>FieldOps</b><span>field service</span></div></div>
+    <nav class="nav" id="nav">
+      <button data-view="dash" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Дашборд</button>
+      <button data-view="dispatch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Диспетчерская</button>
+      <button data-view="trips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 17l4-9h10l4 9"/><circle cx="7.5" cy="18" r="2"/><circle cx="16.5" cy="18" r="2"/></svg>Мои выезды</button>
+      <button data-view="refs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 5h16v14H4z"/><path d="M4 9h16M9 9v10"/></svg>Справочники</button>
+    </nav>
+    <div class="whoami" id="whoami"></div>
+    <div class="side-foot">Демо-режим · данные в браузере<br><br><a href="info/tz.md">ТЗ</a> · <a href="info/brandbook.md">Брендбук</a></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div><h1 id="pageTitle">Дашборд</h1><div class="sub" id="pageSub">Заявки, SLA и нагрузка специалистов</div></div>
+      <div class="grow"></div>
+      <div class="seg" id="roleSwitch">
+        <button data-role="dispatcher" class="on">Диспетчер</button>
+        <button data-role="tech">Специалист</button>
+        <button data-role="manager">Руководитель</button>
+      </div>
+      <button class="btn orange" id="newTicket">+ Заявка</button>
+    </div>
+
+    <!-- DASH -->
+    <section class="view on" id="view-dash">
+      <div class="kpis" id="kpis"></div>
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Последние заявки</h2><p>Нажмите на строку, чтобы открыть карточку</p></div>
+            <button class="btn ghost sm" data-goto="dispatch">Все заявки</button></div>
+          <div class="tw"><table><thead><tr><th>№</th><th>Клиент / адрес</th><th>Работа</th><th>Специалист</th><th>Слот</th><th>Статус</th></tr></thead>
+          <tbody id="recentBody"></tbody></table></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Загрузка на сегодня</h2><p>Активные выезды по специалистам</p></div></div>
+          <div class="load" id="load"></div>
+          <div class="note" id="slaNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DISPATCH -->
+    <section class="view" id="view-dispatch">
+      <div class="card" style="margin-bottom:12px;padding:10px 13px;display:flex;gap:9px;flex-wrap:wrap;align-items:center">
+        <select id="fStatus" class="btn ghost sm" style="padding:7px 10px"><option value="">Все статусы</option></select>
+        <select id="fTech" class="btn ghost sm" style="padding:7px 10px"><option value="">Все специалисты</option></select>
+        <input id="fSearch" placeholder="Поиск: клиент, адрес, №" style="border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:12px;outline:none">
+        <span style="font-size:11.5px;color:var(--muted)" id="dispCount"></span>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><h2>Диспетчерская</h2><p>Создание, назначение и контроль SLA</p></div><button class="btn ghost sm" id="exportCsv">CSV</button></div>
+        <div class="tw"><table><thead><tr><th>№</th><th>Клиент</th><th>Адрес</th><th>Работа</th><th>Специалист</th><th>Слот</th><th>SLA</th><th>Статус</th><th></th></tr></thead>
+        <tbody id="dispBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- TRIPS -->
+    <section class="view" id="view-trips">
+      <div class="card" style="margin-bottom:12px;padding:11px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--muted)">Показаны только ваши заявки. Отметьте чек-лист, чтобы закрыть выезд.</div>
+        <div class="grow"></div>
+        <span class="pill st-assigned" id="tripCount"></span>
+      </div>
+      <div class="trips" id="trips"></div>
+      <div class="note">В боевой версии здесь будет маршрут на день и кнопка «Позвонить клиенту». В MVP — карточки, чек-лист, фото и акт.</div>
+    </section>
+
+    <!-- DETAIL -->
+    <section class="view" id="view-detail">
+      <button class="back" id="backBtn">← Назад</button>
+      <div id="detail"></div>
+    </section>
+
+    <!-- REFS -->
+    <section class="view" id="view-refs">
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Специалисты</h2><p>Нагрузка и специализация</p></div></div>
+          <div id="techList"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Типы работ</h2><p>Норматив SLA и стоимость</p></div></div>
+          <div class="tw"><table style="min-width:auto"><thead><tr><th>Работа</th><th>SLA</th><th>Цена</th></tr></thead><tbody id="workList"></tbody></table></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-h"><div><h2>Битрикс24</h2><p>Интеграция — вторая итерация</p></div></div>
+        <div class="note" style="margin-top:0">
+          Планируемый сценарий: при создании заявки создаётся сделка в воронке «Сервис» с полями
+          <code>UF_CRM_TICKET_ID</code>, <code>UF_CRM_ADDRESS</code>, <code>UF_CRM_SLOT</code>.
+          При закрытии акта — смена стадии и прикрепление файла. Реализация: REST-вебхук
+          <code>/rest/1/&lt;token&gt;/crm.deal.add</code>, очередь повторов, лог ошибок.
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn ghost sm" id="testHook">Проверить вебхук (демо)</button>
+          <button class="btn ghost sm" id="resetAll">Сбросить демо-данные</button>
+        </div>
+        <div class="note" id="storeInfo"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="fieldops.v1";
+const ST={
+  new:{n:"Новая",c:"st-new"}, assigned:{n:"Назначена",c:"st-assigned"},
+  onway:{n:"В пути",c:"st-onway"}, onsite:{n:"На объекте",c:"st-onsite"},
+  done:{n:"Выполнена",c:"st-done"}, closed:{n:"Закрыта",c:"st-closed"}, canceled:{n:"Отменена",c:"st-canceled"}
+};
+const TECHS={
+  sokolov:{name:"Игорь Соколов",color:"#1D4ED8",init:"ИС",spec:"Холодильное оборудование"},
+  petrova:{name:"Мария Петрова",color:"#7C3AED",init:"МП",spec:"Электрика"},
+  kuzmin:{name:"Алексей Кузьмин",color:"#0891B2",init:"АК",spec:"Вентиляция"}
+};
+const WORKS=[
+  {name:"Диагностика",sla:4,price:1500},
+  {name:"Ремонт холодильника",sla:24,price:6500},
+  {name:"Замена проводки",sla:48,price:9800},
+  {name:"Чистка вентиляции",sla:24,price:4200},
+  {name:"Плановое ТО",sla:72,price:3000}
+];
+const CHECKLIST=["Позвонить клиенту и подтвердить время","Проверить оборудование на месте","Согласовать объём работ","Выполнить работы","Сделать фото до/после","Убрать рабочее место","Подписать акт у клиента"];
+
+function iso(d,h){const x=new Date();x.setDate(x.getDate()+d);if(h!=null)x.setHours(h,0,0,0);return x.toISOString();}
+function seed(){
+  return {
+    role:"dispatcher", view:"dash", currentTech:"sokolov", activeId:null,
+    tickets:[
+      {id:101,client:"ООО «Ласточка»",phone:"+7 495 221-45-10",addr:"Москва, ул. Тверская, 18, оф. 4",work:"Ремонт холодильника",prio:"high",tech:"sokolov",slot:iso(0,11),created:iso(-1,9),status:"onsite",check:[1,1,0,0,0,0,0],photos:[],act:{no:"",sum:0,signed:false},note:"Витрина не держит температуру"},
+      {id:102,client:"ИП Кравцов",phone:"+7 916 330-12-88",addr:"Москва, Ленинский пр-т, 74, кв. 12",work:"Замена проводки",prio:"mid",tech:"petrova",slot:iso(0,14),created:iso(-2,10),status:"onway",check:[1,0,0,0,0,0,0],photos:[],act:{no:"",sum:0,signed:false},note:"Замена автомата в щитке"},
+      {id:103,client:"Кафе «Пирог»",phone:"+7 903 771-02-33",addr:"Москва, ул. Малая Бронная, 4",work:"Чистка вентиляции",prio:"high",tech:"kuzmin",slot:iso(0,9),created:iso(-1,8),status:"assigned",check:[0,0,0,0,0,0,0],photos:[],act:{no:"",sum:0,signed:false},note:"Плановое ТО, доступ через служебный вход"},
+      {id:104,client:"ЖК «Северный»",phone:"+7 495 900-55-21",addr:"Москва, Дмитровское ш., 41",work:"Плановое ТО",prio:"low",tech:"sokolov",slot:iso(1,10),created:iso(0,8),status:"new",check:[0,0,0,0,0,0,0],photos:[],act:{no:"",sum:0,signed:false},note:""},
+      {id:105,client:"ООО «Мебель-Стиль»",phone:"+7 499 120-77-04",addr:"Москва, ул. Рябиновая, 26, стр. 2",work:"Диагностика",prio:"mid",tech:"petrova",slot:iso(-1,15),created:iso(-3,11),status:"done",check:[1,1,1,1,1,1,0],photos:[],act:{no:"",sum:0,signed:false},note:"Диагностика после затопления"},
+      {id:106,client:"АО «Теплосеть»",phone:"+7 495 333-19-70",addr:"Москва, ул. Обручева, 15",work:"Ремонт холодильника",prio:"high",tech:"sokolov",slot:iso(-2,12),created:iso(-4,9),status:"closed",check:[1,1,1,1,1,1,1],photos:[],act:{no:"А-1042",sum:6500,signed:true},note:"Заменён компрессор"}
+    ]
+  };
+}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return seed();}
+let S=load();
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rub=n=>new Intl.NumberFormat("ru-RU").format(Math.round(n))+" ₽";
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2500);}
+function fmt(isoStr){const d=new Date(isoStr);return d.toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
+function fmtShort(isoStr){const d=new Date(isoStr);return d.toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
+function hoursLeft(t){
+  const work=WORKS.find(w=>w.name===t.work)||{sla:24};
+  return (new Date(t.created).getTime()+work.sla*36e5-Date.now())/36e5;
+}
+function canSee(t){
+  if(S.role==="tech") return t.tech===S.currentTech;
+  return true;
+}
+function canEdit(){ return S.role!=="manager"; }
+
+/* ---------- render ---------- */
+const TITLES={dash:["Дашборд","Заявки, SLA и нагрузка специалистов"],dispatch:["Диспетчерская","Все заявки и назначения"],trips:["Мои выезды","Только ваши заявки"],detail:["Карточка заявки","Чек-лист, фото, акт"],refs:["Справочники","Специалисты и типы работ"]};
+
+function render(){
+  const [a,b]=TITLES[S.view]||TITLES.dash;
+  $("#pageTitle").textContent=a; $("#pageSub").textContent=b;
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+S.view));
+  $$("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.view===S.view));
+  $("#newTicket").style.display=(S.role==="dispatcher"&&S.view!=="detail")?"":"none";
+  $("#whoami").innerHTML=`<b>${S.role==="tech"?TECHS[S.currentTech].name:S.role==="manager"?"Руководитель":"Диспетчер"}</b>${S.role==="tech"?TECHS[S.currentTech].spec:"Полный доступ к заявкам"}`;
+  renderDash(); renderDispatch(); renderTrips(); renderRefs(); renderDetail();
+}
+
+function renderDash(){
+  const all=S.tickets;
+  const active=all.filter(t=>["assigned","onway","onsite"].includes(t.status));
+  const late=all.filter(t=>!["done","closed","canceled"].includes(t.status)&&hoursLeft(t)<0);
+  const closed=all.filter(t=>t.status==="closed");
+  const sum=closed.reduce((s,t)=>s+(t.act.sum||0),0);
+  $("#kpis").innerHTML=`
+    <div class="kpi"><span>Активные заявки</span><b class="num">${active.length}</b><small>из ${all.length} всего</small></div>
+    <div class="kpi"><span>SLA просрочено</span><b class="num">${late.length}</b><small class="${late.length?"bad":""}">${late.length?"требуют внимания":"все в норме"}</small></div>
+    <div class="kpi"><span>Закрыто актов</span><b class="num">${closed.length}</b><small>сумма ${rub(sum)}</small></div>
+    <div class="kpi"><span>Средний чек</span><b class="num">${rub(closed.length?sum/closed.length:0)}</b><small>по закрытым</small></div>`;
+
+  const recent=[...all].sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,6);
+  $("#recentBody").innerHTML=recent.map(t=>`<tr data-open="${t.id}">
+    <td><span class="id">#${t.id}</span></td>
+    <td><div class="nm">${esc(t.client)}</div><div class="sub2">${esc(t.addr)}</div></td>
+    <td>${esc(t.work)}</td>
+    <td>${t.tech?TECHS[t.tech].name:"—"}</td>
+    <td class="num" style="font-size:11.5px">${fmt(t.slot)}</td>
+    <td><span class="pill ${ST[t.status].c}"><i></i>${ST[t.status].n}</span></td>
+  </tr>`).join("");
+  $$("[data-open]").forEach(r=>r.onclick=()=>openDetail(+r.dataset.open));
+
+  $("#load").innerHTML=Object.entries(TECHS).map(([k,v])=>{
+    const n=active.filter(t=>t.tech===k).length;
+    const max=Math.max(1,...Object.keys(TECHS).map(kk=>active.filter(t=>t.tech===kk).length));
+    return `<div class="l"><span class="ava" style="background:${v.color}">${v.init}</span>
+      <div style="min-width:0"><b style="font-size:12px">${v.name}</b><div style="font-size:10.5px;color:var(--muted)">${v.spec}</div></div>
+      <div class="track"><i style="width:${n/max*100}%;background:${v.color}"></i></div><b>${n}</b></div>`;
+  }).join("");
+
+  $("#slaNote").innerHTML=late.length
+    ? `<b style="color:var(--red)">Просрочено: ${late.length}</b><br>${late.map(t=>`#${t.id} ${esc(t.client)}`).join(", ")}`
+    : "Все активные заявки укладываются в SLA.";
+}
+
+function renderDispatch(){
+  const fs=$("#fStatus"), ft=$("#fTech");
+  if(fs.options.length<=1){
+    fs.innerHTML=`<option value="">Все статусы</option>`+Object.entries(ST).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
+    ft.innerHTML=`<option value="">Все специалисты</option>`+Object.entries(TECHS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+  }
+  const q=$("#fSearch").value.trim().toLowerCase();
+  const rows=S.tickets.filter(t=>(!fs.value||t.status===fs.value)&&(!ft.value||t.tech===ft.value)&&
+    (!q||(t.client+t.addr+t.id+t.work).toLowerCase().includes(q)));
+  $("#dispCount").textContent=`${rows.length} заявок`;
+  $("#dispBody").innerHTML=rows.map(t=>{
+    const h=hoursLeft(t), isLate=!["done","closed","canceled"].includes(t.status)&&h<0;
+    return `<tr data-open="${t.id}">
+      <td><span class="id">#${t.id}</span></td>
+      <td><div class="nm">${esc(t.client)}</div><div class="sub2">${esc(t.phone)}</div></td>
+      <td style="font-size:11.5px;max-width:190px">${esc(t.addr)}</td>
+      <td style="font-size:11.5px">${esc(t.work)}</td>
+      <td>${t.tech?`<span style="display:flex;align-items:center;gap:6px;font-size:11.5px"><span class="ava" style="width:22px;height:22px;font-size:9px;background:${TECHS[t.tech].color}">${TECHS[t.tech].init}</span>${TECHS[t.tech].name.split(" ")[0]}</span>`:"<span style='color:var(--orange);font-weight:800;font-size:11px'>не назначен</span>"}</td>
+      <td class="num" style="font-size:11px">${fmt(t.slot)}</td>
+      <td><span class="sla ${isLate?"late":"ok"}">${["done","closed","canceled"].includes(t.status)?"—":isLate?`−${Math.abs(Math.round(h))} ч`:`${Math.round(h)} ч`}</span></td>
+      <td><span class="pill ${ST[t.status].c}"><i></i>${ST[t.status].n}</span></td>
+      <td style="text-align:right">${S.role==="dispatcher"?`<button class="btn ghost sm" data-assign="${t.id}">Назначить</button>`:""}</td>
+    </tr>`;
+  }).join("")||`<tr><td colspan="9" class="empty">Заявок не найдено</td></tr>`;
+  $$("[data-open]").forEach(r=>r.onclick=e=>{ if(e.target.closest("[data-assign]")) return; openDetail(+r.dataset.open); });
+  $$("[data-assign]").forEach(b=>b.onclick=e=>{e.stopPropagation();assign(+b.dataset.assign);});
+}
+
+function renderTrips(){
+  const mine=S.tickets.filter(t=>t.tech===S.currentTech&&!["closed","canceled"].includes(t.status));
+  $("#tripCount").textContent=`${mine.length} активных`;
+  $("#trips").innerHTML=mine.map(t=>{
+    const done=t.check.filter(Boolean).length, pct=Math.round(done/t.check.length*100);
+    return `<div class="trip ${t.status==="done"?"done":""}">
+      <div class="hd"><span class="id">#${t.id}</span><span class="slot">${fmt(t.slot)}</span>
+        <span class="pill ${ST[t.status].c}" style="margin-left:auto"><i></i>${ST[t.status].n}</span></div>
+      <h4>${esc(t.work)}</h4>
+      <div class="addr">${esc(t.client)}<br>${esc(t.addr)}</div>
+      <div class="row">Чек-лист: ${done} из ${t.check.length}</div>
+      <div class="progress"><i style="width:${pct}%"></i></div>
+      <button class="btn ${t.status==="done"?"green":""} sm" data-open="${t.id}">${t.status==="done"?"Закрыть акт":"Открыть выезд"}</button>
+    </div>`;
+  }).join("")||`<div class="empty">На сегодня выездов нет</div>`;
+  $$("#trips [data-open]").forEach(b=>b.onclick=()=>openDetail(+b.dataset.open));
+}
+
+function renderRefs(){
+  $("#techList").innerHTML=Object.entries(TECHS).map(([k,v])=>{
+    const n=S.tickets.filter(t=>t.tech===k&&!["closed","canceled"].includes(t.status)).length;
+    return `<div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #EEF3F8">
+      <span class="ava" style="background:${v.color}">${v.init}</span>
+      <div><b style="font-size:12.5px">${v.name}</b><div style="font-size:10.5px;color:var(--muted)">${v.spec}</div></div>
+      <span style="margin-left:auto;font-size:11.5px;font-weight:800">${n} активных</span></div>`;
+  }).join("");
+  $("#workList").innerHTML=WORKS.map(w=>`<tr><td style="font-weight:700">${w.name}</td><td class="num">${w.sla} ч</td><td class="num">${rub(w.price)}</td></tr>`).join("");
+  $("#storeInfo").textContent=`Ключ: ${KEY}. Заявок: ${S.tickets.length}. Роль: ${S.role}. Фото хранятся в localStorage (лимит браузера ~5 МБ).`;
+}
+
+function renderDetail(){
+  if(S.view!=="detail") return;
+  const t=S.tickets.find(x=>x.id===S.activeId);
+  if(!t){ S.view="dispatch"; return render(); }
+  if(!canSee(t)) return;
+  const done=t.check.filter(Boolean).length, pct=Math.round(done/t.check.length*100);
+  const canAct=S.role==="tech"&&t.tech===S.currentTech;
+  $("#detail").innerHTML=`<div class="detail">
+    <div>
+      <div class="card">
+        <div class="card-h"><div><h2>${esc(t.work)}</h2><p>#${t.id} · создана ${fmt(t.created)}</p></div>
+          <span class="pill ${ST[t.status].c}" style="margin-left:auto"><i></i>${ST[t.status].n}</span></div>
+        <dl class="kv">
+          <dt>Клиент</dt><dd>${esc(t.client)}</dd>
+          <dt>Телефон</dt><dd>${esc(t.phone)}</dd>
+          <dt>Адрес</dt><dd>${esc(t.addr)}</dd>
+          <dt>Слот</dt><dd>${fmt(t.slot)}</dd>
+          <dt>Специалист</dt><dd>${t.tech?TECHS[t.tech].name:"не назначен"}</dd>
+          <dt>Приоритет</dt><dd>${t.prio==="high"?"Высокий":t.prio==="mid"?"Средний":"Низкий"}</dd>
+          <dt>Комментарий</dt><dd>${esc(t.note||"—")}</dd>
+        </dl>
+        <div class="note">SLA по работе «${esc(t.work)}»: ${(WORKS.find(w=>w.name===t.work)||{sla:24}).sla} ч с момента создания. Осталось: <b>${Math.round(hoursLeft(t))} ч</b>.</div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Чек-лист</h2><p>${done} из ${t.check.length} · ${pct}%</p></div></div>
+        <div class="progress"><i style="width:${pct}%"></i></div>
+        <div class="check">${CHECKLIST.map((c,i)=>`<label class="${t.check[i]?"on":""}">
+          <input type="checkbox" data-chk="${i}" ${t.check[i]?"checked":""} ${canAct?"":"disabled"}><span>${c}</span></label>`).join("")}</div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-h"><div><h2>Фотоотчёт</h2><p>До / после работ</p></div></div>
+        <input type="file" id="photo" accept="image/*" ${canAct?"":"disabled"} style="font-size:11px;width:100%">
+        <div class="photos">${t.photos.map(src=>`<img src="${src}" alt="фото">`).join("")}</div>
+        ${t.photos.length?"":`<div class="empty" style="padding:14px;font-size:11px">Фото пока нет</div>`}
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Акт</h2><p>Закрытие выезда</p></div></div>
+        <div class="fields">
+          <div class="f"><label>Номер</label><input id="actNo" value="${esc(t.act.no)}" ${canAct?"":"disabled"} placeholder="А-1043"></div>
+          <div class="f"><label>Сумма, ₽</label><input id="actSum" type="number" min="0" value="${t.act.sum||""}" ${canAct?"":"disabled"}></div>
+        </div>
+        <label style="display:flex;gap:9px;align-items:center;margin-top:11px;font-size:12px">
+          <input type="checkbox" id="actSigned" ${t.act.signed?"checked":""} ${canAct?"":"disabled"} style="width:18px;height:18px;accent-color:var(--green)"> Клиент подписал акт
+        </label>
+        <button class="btn green" id="closeAct" style="width:100%;margin-top:12px" ${canAct?"":"disabled"}>Закрыть заявку</button>
+        ${canAct?"":`<div class="note">Действия доступны только назначенному специалисту.</div>`}
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>История</h2><p>Ключевые события</p></div></div>
+        <div class="timeline">
+          <div class="tl"><i></i><div><b>Создана</b><span>${fmt(t.created)} · диспетчер</span></div></div>
+          ${t.tech?`<div class="tl"><i></i><div><b>Назначена</b><span>${TECHS[t.tech].name}</span></div></div>`:""}
+          <div class="tl"><i></i><div><b>Текущий статус: ${ST[t.status].n}</b><span>${t.status==="closed"?"акт "+esc(t.act.no||"—"):"в работе"}</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  $$("[data-chk]").forEach(cb=>cb.onchange=()=>{
+    if(!canAct) return;
+    t.check[+cb.dataset.chk]=cb.checked?1:0;
+    if(t.check.every(Boolean)&&t.status!=="done"&&t.status!=="closed") t.status="done";
+    if(!t.check.every(Boolean)&&t.status==="done") t.status="onsite";
+    save(); renderDetail(); toast(t.check.every(Boolean)?"Чек-лист заполнен — можно закрывать акт":"Отметка сохранена");
+  });
+  const ph=$("#photo");
+  if(ph) ph.onchange=()=>{
+    const f=ph.files[0]; if(!f) return;
+    if(f.size>900000) return toast("Файл больше 900 КБ — в MVP не сохранится");
+    const r=new FileReader();
+    r.onload=()=>{ t.photos.push(r.result); save(); renderDetail(); toast("Фото добавлено"); };
+    r.readAsDataURL(f);
+  };
+  $("#closeAct").onclick=()=>{
+    if(!canAct) return;
+    if(!t.check.every(Boolean)) return toast("Отметьте все пункты чек-листа");
+    t.act.no=$("#actNo").value.trim();
+    t.act.sum=+$("#actSum").value||0;
+    t.act.signed=$("#actSigned").checked;
+    if(!t.act.no) return toast("Укажите номер акта");
+    if(!t.act.sum) return toast("Укажите сумму работ");
+    if(!t.act.signed) return toast("Нужна отметка о подписи клиента");
+    t.status="closed"; save(); render(); toast(`Заявка #${t.id} закрыта · ${rub(t.act.sum)}`);
+  };
+}
+
+function openDetail(id){
+  const t=S.tickets.find(x=>x.id===id); if(!t) return;
+  if(!canSee(t)) return toast("Это заявка другого специалиста");
+  S.activeId=id; S.view="detail"; save(); render(); window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function assign(id){
+  const t=S.tickets.find(x=>x.id===id); if(!t) return;
+  $("#modal").innerHTML=`<h3>Назначить специалиста</h3><p class="s">#${t.id} · ${esc(t.client)} · ${esc(t.work)}</p>
+    <div class="fields"><div class="f full"><label>Специалист</label><select id="aTech">
+      ${Object.entries(TECHS).map(([k,v])=>`<option value="${k}" ${t.tech===k?"selected":""}>${v.name} — ${v.spec}</option>`).join("")}
+    </select></div>
+    <div class="f full"><label>Слот</label><input id="aSlot" type="datetime-local" value="${new Date(t.slot).toISOString().slice(0,16)}"></div></div>
+    <div class="mfoot"><button class="btn ghost" id="aCancel">Отмена</button><button class="btn" id="aSave">Назначить</button></div>`;
+  $("#backdrop").classList.add("open");
+  $("#aCancel").onclick=closeModal;
+  $("#aSave").onclick=()=>{
+    t.tech=$("#aTech").value;
+    t.slot=new Date($("#aSlot").value).toISOString();
+    if(t.status==="new") t.status="assigned";
+    save(); closeModal(); render(); toast(`Назначено: ${TECHS[t.tech].name}`);
+  };
+}
+
+function closeModal(){$("#backdrop").classList.remove("open");}
+
+function openTicket(){
+  if(S.role!=="dispatcher") return toast("Создавать заявки может диспетчер");
+  $("#modal").innerHTML=`<h3>Новая заявка</h3><p class="s">SLA рассчитывается автоматически по типу работ.</p>
+    <div class="fields">
+      <div class="f full"><label>Клиент</label><input id="nClient" placeholder="Название или имя"></div>
+      <div class="f"><label>Телефон</label><input id="nPhone" placeholder="+7 …"></div>
+      <div class="f"><label>Приоритет</label><select id="nPrio"><option value="high">Высокий</option><option value="mid" selected>Средний</option><option value="low">Низкий</option></select></div>
+      <div class="f full"><label>Адрес</label><input id="nAddr" placeholder="Город, улица, дом"></div>
+      <div class="f"><label>Тип работ</label><select id="nWork">${WORKS.map(w=>`<option>${w.name}</option>`).join("")}</select></div>
+      <div class="f"><label>Слот</label><input id="nSlot" type="datetime-local" value="${new Date(Date.now()+36e5).toISOString().slice(0,16)}"></div>
+      <div class="f full"><label>Комментарий</label><textarea id="nNote" rows="2" placeholder="Что случилось"></textarea></div>
+    </div>
+    <div class="mfoot"><button class="btn ghost" id="nCancel">Отмена</button><button class="btn orange" id="nSave">Создать</button></div>`;
+  $("#backdrop").classList.add("open");
+  $("#nCancel").onclick=closeModal;
+  $("#nSave").onclick=()=>{
+    const client=$("#nClient").value.trim(), addr=$("#nAddr").value.trim();
+    if(!client) return toast("Введите клиента");
+    if(!addr) return toast("Введите адрес");
+    const id=Math.max(100,...S.tickets.map(t=>t.id))+1;
+    S.tickets.unshift({id,client,phone:$("#nPhone").value.trim(),addr,work:$("#nWork").value,prio:$("#nPrio").value,
+      tech:null,slot:new Date($("#nSlot").value).toISOString(),created:new Date().toISOString(),
+      status:"new",check:CHECKLIST.map(()=>0),photos:[],act:{no:"",sum:0,signed:false},note:$("#nNote").value.trim()});
+    save(); closeModal(); S.view="dispatch"; render(); toast(`Заявка #${id} создана`);
+  };
+  $("#nClient").focus();
+}
+
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+
+/* ---------- events ---------- */
+$("#nav").addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(!b)return;S.view=b.dataset.view;save();render();});
+document.addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(g){S.view=g.dataset.goto;save();render();}});
+$("#roleSwitch").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-role]");if(!b)return;
+  S.role=b.dataset.role; save();
+  if(S.role==="tech") S.view="trips";
+  $$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x===b));
+  render(); toast(S.role==="tech"?`Вы вошли как ${TECHS[S.currentTech].name}`:`Роль: ${b.textContent}`);
+});
+$("#newTicket").onclick=openTicket;
+$("#backBtn").onclick=()=>{S.view=S.role==="tech"?"trips":"dispatch";save();render();};
+$("#fStatus").onchange=renderDispatch; $("#fTech").onchange=renderDispatch; $("#fSearch").oninput=renderDispatch;
+$("#testHook").onclick=()=>toast("Демо: вебхук не настроен. Нужен токен Битрикс24.");
+$("#resetAll").onclick=()=>{if(confirm("Сбросить демо-данные?")){S=seed();save();render();toast("Данные восстановлены");}};
+$("#exportCsv").onclick=()=>{
+  const head=["ID","Клиент","Телефон","Адрес","Работа","Специалист","Слот","Статус","Акт","Сумма"];
+  const rows=S.tickets.map(t=>[t.id,t.client,t.phone,t.addr,t.work,t.tech?TECHS[t.tech].name:"",fmt(t.slot),ST[t.status].n,t.act.no,t.act.sum]);
+  download("fieldops-tickets.csv",[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"),"text/csv;charset=utf-8");
+  toast("CSV выгружен");
+};
+$("#backdrop").addEventListener("click",e=>{if(e.target.id==="backdrop")closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+$$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.role===S.role));
+render();
+</script>
+</body>
+</html>

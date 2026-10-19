@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SellerFlow — задачи и аналитика селлера</title>
+<link rel="icon" href="info/logo.svg">
+<style>
+  :root{
+    --ink:#0E1B1A; --deep:#0B3B36; --emerald:#0FA37F; --lime:#C6F24E;
+    --amber:#F2A33C; --red:#E4572E; --paper:#F4F7F4; --line:#DDE6DF; --card:#fff;
+    --muted:#6C7B76; --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:Inter,"Segoe UI",system-ui,sans-serif; color:var(--ink); background:var(--paper);
+    font-size:14px; -webkit-font-smoothing:antialiased;
+  }
+  button{font:inherit; cursor:pointer; border:0; background:none; color:inherit}
+  input,select,textarea{font:inherit; color:inherit}
+  h1,h2,h3,h4{margin:0; letter-spacing:-.02em; font-family:Manrope,Inter,sans-serif}
+  .num{font-variant-numeric:tabular-nums}
+  .app{display:grid; grid-template-columns:232px 1fr; min-height:100vh}
+
+  /* sidebar */
+  .side{background:var(--deep); color:#DCEBE4; padding:22px 14px; display:flex; flex-direction:column; gap:20px; position:sticky; top:0; height:100vh}
+  .brand{display:flex; align-items:center; gap:10px; padding:0 8px 4px}
+  .brand img{width:36px;height:36px}
+  .brand b{color:#fff; font-size:15px; font-family:Manrope,sans-serif; display:block; line-height:1.1}
+  .brand span{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:#7FB5A6}
+  .nav{display:flex; flex-direction:column; gap:3px}
+  .nav button{display:flex; align-items:center; gap:10px; padding:10px 11px; border-radius:9px; font-size:13px; font-weight:600; color:#B9D2C9; text-align:left; transition:.14s}
+  .nav button svg{width:17px;height:17px;flex:none;opacity:.8}
+  .nav button:hover{background:rgba(255,255,255,.07); color:#fff}
+  .nav button.on{background:rgba(198,242,78,.13); color:var(--lime)}
+  .side-foot{margin-top:auto; font-size:11px; color:#7FB5A6; line-height:1.55; padding:0 8px}
+  .side-foot a{color:var(--lime); font-weight:700; text-decoration:none}
+
+  /* top */
+  main{padding:20px 26px 36px; min-width:0}
+  .top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:20px}
+  .top h1{font-size:23px; font-weight:800}
+  .top .sub{font-size:12px; color:var(--muted); margin-top:2px}
+  .grow{flex:1}
+  .seg{display:flex; border:1px solid var(--line); background:#fff; border-radius:10px; padding:3px}
+  .seg button{padding:7px 12px; border-radius:8px; font-size:12px; font-weight:700; color:var(--muted)}
+  .seg button.on{background:var(--deep); color:#fff}
+  .btn{display:inline-flex; align-items:center; gap:7px; padding:10px 15px; border-radius:10px; background:var(--deep); color:#fff; font-weight:700; font-size:12.5px; transition:.14s}
+  .btn:hover{background:#0E4E47}
+  .btn.lime{background:var(--lime); color:#14210E}
+  .btn.lime:hover{background:#D3F86F}
+  .btn.ghost{background:#fff; border:1px solid var(--line); color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--emerald); color:var(--emerald); background:#fff}
+  .btn.sm{padding:7px 11px; font-size:11.5px}
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+
+  /* kpi */
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px}
+  .kpi{background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; position:relative; overflow:hidden}
+  .kpi span{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); font-weight:800}
+  .kpi b{display:block; font-size:26px; margin-top:6px; font-family:Manrope,sans-serif; font-weight:800}
+  .kpi small{font-size:11.5px; font-weight:700; color:var(--emerald)}
+  .kpi small.bad{color:var(--red)}
+  .kpi:after{content:""; position:absolute; left:0; top:0; width:3px; height:100%; background:var(--emerald)}
+  .kpi.b2:after{background:var(--lime)} .kpi.b3:after{background:var(--amber)} .kpi.b4:after{background:var(--red)}
+
+  .cols{display:grid; grid-template-columns:1.5fr 1fr; gap:14px; align-items:start}
+  .card{background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:16px}
+  .card-h{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap}
+  .card-h h2{font-size:14.5px; font-weight:800}
+  .card-h p{font-size:11.5px; color:var(--muted); margin:1px 0 0}
+  .card-h .btn{margin-left:auto}
+
+  /* chart */
+  .chart{position:relative; height:190px; display:flex; align-items:flex-end; gap:6px; padding-top:10px}
+  .chart .c{flex:1; display:flex; align-items:flex-end; justify-content:center; gap:2px; height:100%; position:relative}
+  .chart .c i{display:block; width:46%; background:linear-gradient(180deg,#12B78F,#0FA37F); border-radius:4px 4px 0 0; min-height:2px; transition:height .4s}
+  .chart .c u{display:block; width:26%; background:var(--lime); border-radius:4px 4px 0 0; min-height:2px; transition:height .4s}
+  .chart .c span{position:absolute; bottom:-18px; left:0; right:0; text-align:center; font-size:9px; color:var(--muted)}
+  .chart-wrap{padding-bottom:20px}
+  .tip{font-size:11px; color:var(--muted); display:flex; gap:14px; margin-top:6px}
+  .tip i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px}
+
+  /* attention */
+  .att{display:flex; flex-direction:column; gap:8px}
+  .att-item{display:flex; gap:10px; align-items:flex-start; padding:10px; border-radius:10px; background:#FFF9F3; border:1px solid #F6E2CB}
+  .att-item.red{background:#FFF3EF; border-color:#F7D3C7}
+  .att-item b{font-size:12.5px; display:block}
+  .att-item span{font-size:11px; color:var(--muted); line-height:1.4}
+  .att-item .ic{width:24px;height:24px;border-radius:7px; display:grid; place-items:center; background:var(--amber); color:#fff; font-size:12px; flex:none; font-weight:800}
+  .att-item.red .ic{background:var(--red)}
+
+  /* kanban */
+  .board{display:grid; grid-template-columns:repeat(4,minmax(210px,1fr)); gap:12px; align-items:start}
+  .col{background:#EDF2EE; border-radius:var(--r); padding:10px; min-height:150px; border:1px solid transparent; transition:.14s}
+  .col.over{border-color:var(--emerald); background:#E3F1EA}
+  .col-h{display:flex; align-items:center; gap:7px; padding:2px 4px 10px}
+  .col-h h3{font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:800}
+  .col-h .n{margin-left:auto; font-size:10.5px; font-weight:800; background:#fff; border-radius:6px; padding:2px 6px; color:var(--muted)}
+  .tasks{display:flex; flex-direction:column; gap:8px}
+  .task{background:#fff; border:1px solid var(--line); border-radius:10px; padding:11px; cursor:grab; transition:.14s}
+  .task:hover{box-shadow:0 4px 14px rgba(11,59,54,.09); transform:translateY(-1px)}
+  .task.dragging{opacity:.4}
+  .task .row{display:flex; align-items:center; gap:6px; margin-bottom:6px}
+  .sku{font-size:10px; font-weight:800; letter-spacing:.03em; color:var(--deep); background:#E8F2EC; padding:2px 6px; border-radius:5px}
+  .prio{font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:2px 6px; border-radius:5px; margin-left:auto}
+  .p-high{background:#FDE6DE;color:#B33A15} .p-mid{background:#FEF1DC;color:#9A6412} .p-low{background:#E6F1EA;color:#0B6B53}
+  .task h4{font-size:12.5px; font-weight:700; line-height:1.35; margin:0 0 7px}
+  .task .meta{display:flex; align-items:center; gap:7px; font-size:10.5px; color:var(--muted)}
+  .task .meta .late{color:var(--red); font-weight:800}
+  .task .meta .who{margin-left:auto; width:20px;height:20px;border-radius:50%; background:var(--deep); color:#fff; display:grid; place-items:center; font-size:9px; font-weight:800}
+  .task .act{display:flex; gap:5px; margin-top:9px}
+  .task .act button{flex:1; font-size:10.5px; font-weight:800; padding:6px; border-radius:7px; background:#F2F6F3; color:var(--deep)}
+  .task .act button:hover{background:var(--lime); color:#14210E}
+
+  /* table */
+  .tablewrap{overflow:auto; margin:0 -16px -16px; padding:0 16px 4px}
+  table{width:100%; border-collapse:collapse; font-size:12px; min-width:680px}
+  th{text-align:left; padding:8px 9px; font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-weight:800; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none}
+  th:hover{color:var(--deep)}
+  th .ar{opacity:.35; font-size:9px}
+  td{padding:9px; border-bottom:1px solid #EDF2EE; vertical-align:middle}
+  tbody tr:hover td{background:#F8FBF8}
+  td .nm{font-weight:700; font-size:12px}
+  td .sub{font-size:10.5px; color:var(--muted)}
+  .tag{font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:5px; white-space:nowrap}
+  .abc-A{background:#E4F7EE;color:#0A7A5D} .abc-B{background:#F0F5E2;color:#6C7C15} .abc-C{background:#FBEEE7;color:#A65025}
+  .bar{height:4px; background:#EDF2EE; border-radius:3px; overflow:hidden; margin-top:4px}
+  .bar i{display:block; height:100%; background:var(--emerald)}
+  .neg{color:var(--red); font-weight:800}
+  .pos{color:var(--emerald); font-weight:800}
+
+  /* modal */
+  .backdrop{position:fixed; inset:0; background:rgba(8,26,24,.45); display:none; place-items:center; padding:18px; z-index:40}
+  .backdrop.open{display:grid}
+  .modal{background:#fff; border-radius:16px; padding:22px; width:min(540px,100%); box-shadow:0 26px 70px rgba(8,26,24,.3); max-height:92vh; overflow:auto}
+  .modal h3{font-size:18px; margin-bottom:3px}
+  .modal .s{font-size:12px; color:var(--muted); margin:0 0 16px}
+  .fields{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+  .f{display:flex; flex-direction:column; gap:5px}
+  .f.full{grid-column:1/-1}
+  .f label{font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted)}
+  .f input,.f select,.f textarea{border:1px solid var(--line); border-radius:8px; padding:9px 10px; font-size:12.5px; background:#FBFDFB; outline:none}
+  .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--emerald); background:#fff}
+  .mfoot{display:flex; justify-content:flex-end; gap:8px; margin-top:16px}
+  .toast{position:fixed; left:50%; bottom:22px; transform:translate(-50%,16px); opacity:0; background:var(--deep); color:#fff; padding:10px 18px; border-radius:9px; font-size:12.5px; font-weight:600; transition:.22s; z-index:60; pointer-events:none; box-shadow:0 12px 30px rgba(8,26,24,.28)}
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+  .view{display:none} .view.on{display:block}
+  .empty{padding:22px; text-align:center; color:var(--muted); font-size:12px}
+  .note{font-size:11px; color:var(--muted); background:#F7FAF7; border:1px dashed var(--line); border-radius:9px; padding:10px; margin-top:12px; line-height:1.5}
+
+  @media (max-width:1080px){
+    .app{grid-template-columns:1fr}
+    .side{position:static; height:auto; flex-direction:row; align-items:center; overflow-x:auto; padding:12px}
+    .side-foot{display:none}
+    .nav{flex-direction:row} .nav button{white-space:nowrap}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .cols{grid-template-columns:1fr}
+    .board{grid-template-columns:repeat(2,minmax(190px,1fr))}
+    main{padding:16px 14px 30px}
+  }
+  @media (max-width:600px){
+    .board{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr; gap:8px}
+    .kpi b{font-size:21px}
+    .fields{grid-template-columns:1fr}
+    .top h1{font-size:19px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="info/logo.svg" alt=""><div><b>SellerFlow</b><span>seller ops</span></div></div>
+    <nav class="nav" id="nav">
+      <button data-view="overview" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Обзор</button>
+      <button data-view="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="5.5" height="16" rx="1.6"/><rect x="9.5" y="4" width="5.5" height="11" rx="1.6"/><rect x="16" y="4" width="5" height="14" rx="1.6"/></svg>Канбан</button>
+      <button data-view="products"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>Товары</button>
+      <button data-view="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 19V5m0 14h16"/><path d="M8 16v-5m4 5V8m4 8v-3"/></svg>Аналитика</button>
+      <button data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2L5.5 6 3.5 9.3l2 1.5A7 7 0 0 0 5.4 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z"/></svg>Настройки</button>
+    </nav>
+    <div class="side-foot">
+      Демо-данные. API маркетплейсов<br>не подключён.<br><br>
+      <a href="info/tz.md">ТЗ</a> · <a href="info/brandbook.md">Брендбук</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div><h1 id="pageTitle">Обзор</h1><div class="sub" id="pageSub">Ozon + Wildberries · 14 дней</div></div>
+      <div class="grow"></div>
+      <div class="seg" id="roleSwitch">
+        <button data-role="owner" class="on">Владелец</button>
+        <button data-role="manager">Менеджер</button>
+        <button data-role="viewer">Наблюдатель</button>
+      </div>
+      <button class="btn lime" id="addTask">+ Задача</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="view on" id="view-overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Выручка и маржа</h2><p>Последние 14 дней, тыс. ₽</p></div>
+            <button class="btn ghost sm" id="rangeBtn">14 дней</button></div>
+          <div class="chart-wrap">
+            <div class="chart" id="chart"></div>
+            <div class="tip"><span><i style="background:#0FA37F"></i>Выручка</span><span><i style="background:#C6F24E"></i>Маржа</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Требует внимания</h2><p>Автопроверки по правилам</p></div></div>
+          <div class="att" id="att"></div>
+        </div>
+      </div>
+      <div class="cols" style="margin-top:14px">
+        <div class="card">
+          <div class="card-h"><div><h2>Мои задачи</h2><p>Ближайшие дедлайны</p></div><button class="btn ghost sm" data-goto="board">Все задачи</button></div>
+          <div id="miniTasks"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>ABC по выручке</h2><p>Вклад SKU за 30 дней</p></div></div>
+          <div id="abc"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOARD -->
+    <section class="view" id="view-board">
+      <div class="card" style="margin-bottom:12px; padding:11px 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+        <select id="fSku" class="btn ghost sm" style="padding:7px 10px"><option value="">Все товары</option></select>
+        <select id="fPrio" class="btn ghost sm" style="padding:7px 10px">
+          <option value="">Любой приоритет</option><option value="high">Высокий</option><option value="mid">Средний</option><option value="low">Низкий</option>
+        </select>
+        <span class="sub" id="boardCount" style="font-size:11.5px;color:var(--muted)"></span>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="note">Перетащите карточку между колонками. Статус «Готово» доступен только из «На проверке» — так сохраняется контроль качества.</div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section class="view" id="view-products">
+      <div class="card">
+        <div class="card-h">
+          <div><h2>Товары</h2><p>Нажмите на заголовок колонки для сортировки</p></div>
+          <button class="btn ghost sm" id="exportCsv">CSV</button>
+        </div>
+        <div class="tablewrap">
+          <table id="prodTable">
+            <thead><tr>
+              <th data-sort="name">Товар <span class="ar">↕</span></th>
+              <th data-sort="price">Цена <span class="ar">↕</span></th>
+              <th data-sort="cost">Себест. <span class="ar">↕</span></th>
+              <th data-sort="stock">Остаток <span class="ar">↕</span></th>
+              <th data-sort="sales">Продаж/дн <span class="ar">↕</span></th>
+              <th data-sort="turn">Оборач., дн <span class="ar">↕</span></th>
+              <th data-sort="margin">Маржа <span class="ar">↕</span></th>
+              <th data-sort="abc">ABC <span class="ar">↕</span></th>
+            </tr></thead>
+            <tbody id="prodBody"></tbody>
+          </table>
+        </div>
+        <div class="note">Маржа считается как (цена − себестоимость − комиссия МП − логистика) / цена. Оборачиваемость = остаток / средние продажи в день.</div>
+      </div>
+    </section>
+
+    <!-- ANALYTICS -->
+    <section class="view" id="view-analytics">
+      <div class="kpis" id="kpis2"></div>
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Маржа по категориям</h2><p>Средневзвешенная, %</p></div></div>
+          <div id="catChart"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Проблемные SKU</h2><p>Ниже порога маржи или остатка</p></div></div>
+          <div class="att" id="att2"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-h"><div><h2>Что делать дальше</h2><p>Рекомендации формируются по метрикам</p></div></div>
+        <div id="recs"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Параметры расчёта</h2><p>Влияют на маржу и светофор</p></div></div>
+          <div class="fields">
+            <div class="f"><label>Комиссия МП, %</label><input id="sComm" type="number" min="0" max="50" step="0.5"></div>
+            <div class="f"><label>Логистика, ₽/шт</label><input id="sLog" type="number" min="0" max="2000"></div>
+            <div class="f"><label>Налог, %</label><input id="sTax" type="number" min="0" max="30" step="0.5"></div>
+            <div class="f"><label>Порог маржи, %</label><input id="sMin" type="number" min="0" max="80"></div>
+          </div>
+          <div class="mfoot" style="justify-content:flex-start"><button class="btn" id="saveSettings">Применить</button></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Подключение API</h2><p>Следующий шаг после MVP</p></div></div>
+          <div class="note" style="margin-top:0">
+            Для боевой версии нужны: <b>Client-Id</b> и <b>Api-Key</b> продавца, доступ к отчётам о реализации,
+            остаткам и заказам. Минимальный набор методов: <code>/v1/analytics/data</code>,
+            <code>/v2/product/info/stocks</code>, <code>/v3/posting/fbs/list</code>.
+            Данные тянутся раз в 30 минут, кэшируются в базе, расчёт метрик — на сервере.
+          </div>
+          <button class="btn ghost sm" style="margin-top:12px" id="fakeApi">Проверить подключение (демо)</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-h"><div><h2>Данные</h2><p>Сброс к демо-набору</p></div><button class="btn ghost sm" id="resetAll">Сбросить всё</button></div>
+        <div class="note" style="margin-top:0" id="storeInfo"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="sellerflow.v1";
+const STATUS=[
+  {id:"backlog",name:"Бэклог"},
+  {id:"progress",name:"В работе"},
+  {id:"review",name:"На проверке"},
+  {id:"done",name:"Готово"}
+];
+const PRIO={high:{n:"Высокий",c:"p-high"},mid:{n:"Средний",c:"p-mid"},low:{n:"Низкий",c:"p-low"}};
+const TYPES=["Контент","Цена","Поставка","Реклама","Отзывы","Карточка"];
+const WHO={anna:"Анна",ivan:"Иван",sergey:"Сергей"};
+
+function seed(){
+  const days=14, rev=[], mar=[];
+  for(let i=0;i<days;i++){
+    const base=118+Math.sin(i/2.2)*16+i*2.4+ (i%4===0?9:0);
+    rev.push(Math.round(base));
+    mar.push(Math.round(base*(0.17+Math.cos(i/3)*0.02)));
+  }
+  return {
+    role:"owner", view:"overview", sort:{key:"margin",dir:1},
+    settings:{comm:18, log:55, tax:6, minMargin:15},
+    days, rev, mar,
+    products:[
+      {id:1,sku:"SF-1001",name:"Органайзер для белья 6 секций",cat:"Дом",price:1290,cost:520,stock:180,sales:9.4,abc:"A"},
+      {id:2,sku:"SF-1002",name:"Набор контейнеров 5 шт.",cat:"Кухня",price:1890,cost:980,stock:64,sales:7.1,abc:"A"},
+      {id:3,sku:"SF-1003",name:"Коврик для йоги 6 мм",cat:"Спорт",price:2190,cost:1150,stock:22,sales:3.2,abc:"B"},
+      {id:4,sku:"SF-1004",name:"Лампа настольная LED",cat:"Дом",price:1590,cost:1050,stock:96,sales:2.4,abc:"B"},
+      {id:5,sku:"SF-1005",name:"Термокружка 450 мл",cat:"Посуда",price:990,cost:410,stock:12,sales:4.8,abc:"A"},
+      {id:6,sku:"SF-1006",name:"Чехол для планшета 11″",cat:"Аксессуары",price:1390,cost:970,stock:140,sales:1.1,abc:"C"},
+      {id:7,sku:"SF-1007",name:"Стеллаж настенный 3 полки",cat:"Дом",price:2490,cost:1180,stock:38,sales:2.9,abc:"B"}
+    ],
+    tasks:[
+      {id:1,title:"Переснять главное фото SF-1004",sku:"SF-1004",type:"Контент",prio:"high",due:iso(0),who:"anna",status:"progress"},
+      {id:2,title:"Поднять цену SF-1003 до 2390 ₽",sku:"SF-1003",type:"Цена",prio:"high",due:iso(1),who:"ivan",status:"backlog"},
+      {id:3,title:"Согласовать поставку SF-1005 (12 шт.)",sku:"SF-1005",type:"Поставка",prio:"high",due:iso(-1),who:"sergey",status:"review"},
+      {id:4,title:"Ответить на 8 отзывов SF-1001",sku:"SF-1001",type:"Отзывы",prio:"mid",due:iso(2),who:"anna",status:"backlog"},
+      {id:5,title:"Запустить кампанию на SF-1002",sku:"SF-1002",type:"Реклама",prio:"mid",due:iso(3),who:"ivan",status:"progress"},
+      {id:6,title:"Проверить SEO-текст SF-1006",sku:"SF-1006",type:"Карточка",prio:"low",due:iso(5),who:"anna",status:"backlog"},
+      {id:7,title:"Выгрузить отчёт по марже за неделю",sku:"—",type:"Аналитика",prio:"low",due:iso(-2),who:"sergey",status:"done"}
+    ]
+  };
+}
+function iso(d){const d2=new Date();d2.setDate(d2.getDate()+d);return d2.toISOString().slice(0,10);}
+function uid(){return Date.now()+Math.floor(Math.random()*900);}
+function load(){try{const r=localStorage.getItem(KEY); if(r) return JSON.parse(r);}catch(e){} return seed();}
+let S=load();
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const rub=n=>new Intl.NumberFormat("ru-RU").format(Math.round(n))+" ₽";
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2400);}
+
+function margin(p){
+  const s=S.settings;
+  const net=p.price - p.cost - p.price*s.comm/100 - s.log - p.price*s.tax/100;
+  return {rub:net, pct:p.price?net/p.price*100:0};
+}
+function turnover(p){ return p.sales>0 ? p.stock/p.sales : null; }
+function canEdit(){ return S.role!=="viewer"; }
+
+/* ---------- views ---------- */
+const TITLES={overview:["Обзор","Ozon + Wildberries · 14 дней"],board:["Канбан задач","Привязка задач к SKU"],products:["Товары","Метрики по каждому SKU"],analytics:["Аналитика","ABC, маржа, риски"],settings:["Настройки","Параметры расчёта"]};
+
+function render(){
+  const [t,s]=TITLES[S.view]||TITLES.overview;
+  $("#pageTitle").textContent=t; $("#pageSub").textContent=s;
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+S.view));
+  $$("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.view===S.view));
+  $("#addTask").style.display = canEdit()?"":"none";
+  $("#addTask").textContent="+ Задача";
+  renderOverview(); renderBoard(); renderProducts(); renderAnalytics(); renderSettings();
+}
+
+function renderOverview(){
+  const totalRev=S.rev.reduce((a,b)=>a+b,0)*1000;
+  const totalMar=S.mar.reduce((a,b)=>a+b,0)*1000;
+  const avgMargin=totalMar/totalRev*100;
+  const lowMargin=S.products.filter(p=>margin(p).pct<S.settings.minMargin).length;
+  const lowStock=S.products.filter(p=>{const t=turnover(p);return t!==null&&t<7;}).length;
+  const openTasks=S.tasks.filter(t=>t.status!=="done").length;
+  const late=S.tasks.filter(t=>t.status!=="done"&&t.due<iso(0)).length;
+
+  $("#kpis").innerHTML=`
+    <div class="kpi"><span>Выручка, 14 дней</span><b class="num">${(totalRev/1e6).toFixed(2)} млн ₽</b><small>+12,4% к прошлому периоду</small></div>
+    <div class="kpi b2"><span>Средняя маржа</span><b class="num">${avgMargin.toFixed(1)}%</b><small class="${avgMargin<S.settings.minMargin?"bad":""}">порог ${S.settings.minMargin}%</small></div>
+    <div class="kpi b3"><span>Низкая маржа</span><b class="num">${lowMargin}</b><small class="${lowMargin?"bad":""}">SKU ниже порога</small></div>
+    <div class="kpi b4"><span>Открытые задачи</span><b class="num">${openTasks}</b><small class="${late?"bad":""}">${late?`${late} просрочено`:"все в срок"}</small></div>`;
+
+  const max=Math.max(...S.rev);
+  $("#chart").innerHTML=S.rev.map((v,i)=>`<div class="c" title="${i+1}-й день: ${v} тыс. ₽">
+    <u style="height:${(S.mar[i]/max)*100}%"></u><i style="height:${(v/max)*100}%"></i>
+    <span>${i%2===0?i+1:""}</span></div>`).join("");
+
+  const att=[];
+  S.products.forEach(p=>{
+    const m=margin(p), t=turnover(p);
+    if(m.pct<S.settings.minMargin) att.push({red:true,ic:"₽",t:`${p.sku} · маржа ${m.pct.toFixed(1)}%`,s:`Ниже порога ${S.settings.minMargin}%. Проверить цену или себестоимость.`});
+    if(t!==null&&t<7) att.push({red:true,ic:"!",t:`${p.sku} · хватит на ${Math.floor(t)} дн.`,s:`Остаток ${p.stock} шт. при продажах ${p.sales}/день. Нужна поставка.`});
+  });
+  S.tasks.filter(t=>t.status!=="done"&&t.due<iso(0)).forEach(t=>att.push({red:false,ic:"⏱",t:`Просрочена: ${t.title}`,s:`${t.sku} · срок ${fmt(t.due)} · ${WHO[t.who]}`}));
+  $("#att").innerHTML=att.slice(0,6).map(a=>`<div class="att-item ${a.red?"red":""}"><span class="ic">${a.ic}</span><div><b>${esc(a.t)}</b><span>${esc(a.s)}</span></div></div>`).join("")||`<div class="empty">Всё в норме — проблем не найдено</div>`;
+
+  const next=[...S.tasks].filter(t=>t.status!=="done").sort((a,b)=>a.due.localeCompare(b.due)).slice(0,5);
+  $("#miniTasks").innerHTML=next.map(t=>`<div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #EDF2EE">
+    <span class="sku">${t.sku}</span>
+    <div style="min-width:0"><div style="font-size:12.5px;font-weight:700">${esc(t.title)}</div>
+    <div style="font-size:10.5px;color:var(--muted)">${t.type} · ${WHO[t.who]} · <span class="${t.due<iso(0)?"neg":""}">${fmt(t.due)}</span></div></div>
+    <span class="prio ${PRIO[t.prio].c}" style="margin-left:auto">${PRIO[t.prio].n}</span>
+  </div>`).join("")||`<div class="empty">Задач нет</div>`;
+
+  const byAbc={A:0,B:0,C:0};
+  S.products.forEach(p=>byAbc[p.abc]+=p.price*p.sales*30);
+  const sum=Object.values(byAbc).reduce((a,b)=>a+b,0)||1;
+  $("#abc").innerHTML=Object.entries(byAbc).map(([k,v])=>`
+    <div style="margin-bottom:11px"><div style="display:flex;font-size:11.5px;font-weight:700"><span>Класс ${k}</span><span style="margin-left:auto">${(v/sum*100).toFixed(0)}%</span></div>
+    <div class="bar"><i style="width:${v/sum*100}%;background:${k==="A"?"#0FA37F":k==="B"?"#C6F24E":"#F2A33C"}"></i></div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:3px">${S.products.filter(p=>p.abc===k).length} SKU · ${rub(v)}/мес</div></div>`).join("");
+}
+
+function fmt(d){ if(!d||d==="—") return "—"; const x=new Date(d+"T00:00:00"); return x.toLocaleDateString("ru-RU",{day:"numeric",month:"short"}); }
+
+function renderBoard(){
+  const fSku=$("#fSku"), fPrio=$("#fPrio");
+  if(fSku.options.length<=1){
+    fSku.innerHTML=`<option value="">Все товары</option>`+S.products.map(p=>`<option value="${p.sku}">${p.sku}</option>`).join("")+`<option value="—">Без товара</option>`;
+  }
+  const list=S.tasks.filter(t=>(!fSku.value||t.sku===fSku.value)&&(!fPrio.value||t.prio===fPrio.value));
+  $("#boardCount").textContent=`${list.length} из ${S.tasks.length} задач`;
+  $("#board").innerHTML=STATUS.map(c=>{
+    const items=list.filter(t=>t.status===c.id);
+    return `<div class="col" data-status="${c.id}">
+      <div class="col-h"><h3>${c.name}</h3><span class="n">${items.length}</span></div>
+      <div class="tasks">${items.map(taskCard).join("")||`<div class="empty" style="padding:16px;font-size:11px">Пусто</div>`}</div></div>`;
+  }).join("");
+  $$(".task").forEach(el=>{
+    el.addEventListener("dragstart",e=>{el.classList.add("dragging");e.dataTransfer.setData("text/plain",el.dataset.id);});
+    el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+    el.addEventListener("dblclick",()=>openTask(+el.dataset.id));
+  });
+  $$(".col").forEach(col=>{
+    col.addEventListener("dragover",e=>{e.preventDefault();col.classList.add("over");});
+    col.addEventListener("dragleave",()=>col.classList.remove("over"));
+    col.addEventListener("drop",e=>{e.preventDefault();col.classList.remove("over");move(+e.dataTransfer.getData("text/plain"),col.dataset.status);});
+  });
+  $$("[data-mv]").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();move(+b.dataset.id,b.dataset.mv);}));
+}
+
+function taskCard(t){
+  const late=t.due<iso(0)&&t.status!=="done";
+  const next={backlog:"progress",progress:"review",review:"done"}[t.status];
+  const label={backlog:"Взять",progress:"На проверку",review:"Готово"}[t.status];
+  return `<article class="task" draggable="true" data-id="${t.id}">
+    <div class="row"><span class="sku">${esc(t.sku)}</span><span class="prio ${PRIO[t.prio].c}">${PRIO[t.prio].n}</span></div>
+    <h4>${esc(t.title)}</h4>
+    <div class="meta"><span>${t.type}</span><span>·</span><span class="${late?"late":""}">${fmt(t.due)}</span><span class="who">${WHO[t.who].slice(0,1)}</span></div>
+    ${next&&canEdit()?`<div class="act"><button data-mv="${next}" data-id="${t.id}">${label}</button></div>`:""}
+  </article>`;
+}
+
+function move(id,st){
+  if(!canEdit()) return toast("Роль «Наблюдатель» не может менять задачи");
+  const t=S.tasks.find(x=>x.id===id); if(!t||t.status===st) return;
+  if(st==="done"&&t.status!=="review") return toast("Сначала отправьте задачу на проверку");
+  t.status=st; save(); render(); toast(`«${t.title.slice(0,28)}…» → ${STATUS.find(x=>x.id===st).name}`);
+}
+
+function renderProducts(){
+  const rows=[...S.products].sort((a,b)=>{
+    const k=S.sort.key;
+    const val=p=>k==="margin"?margin(p).pct:k==="turn"?(turnover(p)??1e9):p[k];
+    const av=val(a),bv=val(b);
+    return (typeof av==="string"?av.localeCompare(bv):av-bv)*S.sort.dir;
+  });
+  $("#prodBody").innerHTML=rows.map(p=>{
+    const m=margin(p), tr=turnover(p);
+    return `<tr>
+      <td><div class="nm">${esc(p.name)}</div><div class="sub">${p.sku} · ${p.cat}</div></td>
+      <td class="num">${rub(p.price)}</td>
+      <td class="num">${rub(p.cost)}</td>
+      <td class="num">${p.stock}</td>
+      <td class="num">${p.sales.toFixed(1)}</td>
+      <td class="num ${tr!==null&&tr<7?"neg":""}">${tr===null?"—":Math.round(tr)}</td>
+      <td><span class="${m.pct<S.settings.minMargin?"neg":"pos"}">${m.pct.toFixed(1)}%</span><div class="bar"><i style="width:${Math.max(2,Math.min(100,m.pct*2.5))}%;background:${m.pct<S.settings.minMargin?"#E4572E":"#0FA37F"}"></i></div></td>
+      <td><span class="tag abc-${p.abc}">${p.abc}</span></td>
+    </tr>`;
+  }).join("");
+  $$("#prodTable th[data-sort]").forEach(th=>th.onclick=()=>{
+    const k=th.dataset.sort;
+    if(S.sort.key===k) S.sort.dir*=-1; else S.sort={key:k,dir:1};
+    save(); renderProducts();
+  });
+}
+
+function renderAnalytics(){
+  const totalRev=S.rev.reduce((a,b)=>a+b,0)*1000;
+  const totalMar=S.mar.reduce((a,b)=>a+b,0)*1000;
+  const risky=S.products.filter(p=>margin(p).pct<S.settings.minMargin).length;
+  const dead=S.products.filter(p=>turnover(p)===null||turnover(p)>45).length;
+  $("#kpis2").innerHTML=`
+    <div class="kpi"><span>Выручка периода</span><b class="num">${(totalRev/1e6).toFixed(2)} млн ₽</b><small>14 дней</small></div>
+    <div class="kpi b2"><span>Маржа периода</span><b class="num">${(totalMar/1e6).toFixed(2)} млн ₽</b><small>${(totalMar/totalRev*100).toFixed(1)}% от выручки</small></div>
+    <div class="kpi b3"><span>SKU ниже порога</span><b class="num">${risky}</b><small class="${risky?"bad":""}">из ${S.products.length}</small></div>
+    <div class="kpi b4"><span>Залежавшиеся</span><b class="num">${dead}</b><small class="${dead?"bad":""}">оборачиваемость &gt; 45 дн.</small></div>`;
+
+  const cats={};
+  S.products.forEach(p=>{ const m=margin(p); cats[p.cat]=cats[p.cat]||{sum:0,w:0}; cats[p.cat].sum+=m.pct*p.price*p.sales; cats[p.cat].w+=p.price*p.sales; });
+  const arr=Object.entries(cats).map(([k,v])=>[k,v.w?v.sum/v.w:0]).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(...arr.map(a=>a[1]),1);
+  $("#catChart").innerHTML=arr.map(([k,v])=>`
+    <div style="margin-bottom:12px"><div style="display:flex;font-size:11.5px;font-weight:700"><span>${k}</span><span style="margin-left:auto">${v.toFixed(1)}%</span></div>
+    <div class="bar" style="height:6px"><i style="width:${v/max*100}%;background:${v<S.settings.minMargin?"#E4572E":"#0FA37F"}"></i></div></div>`).join("");
+
+  const probs=S.products.map(p=>({p,m:margin(p),t:turnover(p)})).filter(x=>x.m.pct<S.settings.minMargin||(x.t!==null&&x.t<7)).slice(0,6);
+  $("#att2").innerHTML=probs.map(x=>`<div class="att-item red"><span class="ic">!</span><div>
+    <b>${x.p.sku} · ${x.p.name.slice(0,26)}</b>
+    <span>Маржа ${x.m.pct.toFixed(1)}% · остаток ${x.p.stock} шт. · ${x.t===null?"нет продаж":Math.round(x.t)+" дн."}</span></div></div>`).join("")||`<div class="empty">Рисков нет</div>`;
+
+  const recs=[];
+  const lowStock=S.products.filter(p=>{const t=turnover(p);return t!==null&&t<7;});
+  if(lowStock.length) recs.push(`Оформить поставку по ${lowStock.map(p=>p.sku).join(", ")} — остатка меньше чем на неделю.`);
+  const lowMarg=S.products.filter(p=>margin(p).pct<S.settings.minMargin);
+  if(lowMarg.length) recs.push(`Проверить цены: ${lowMarg.map(p=>p.sku).join(", ")}. Вариант — поднять на 5–8% и замерить конверсию неделю.`);
+  const c=S.products.filter(p=>p.abc==="C");
+  if(c.length) recs.push(`${c.length} SKU класса C: решить, оставлять ли в ассортименте, или перевести в акцию для очистки склада.`);
+  $("#recs").innerHTML=recs.map(r=>`<div style="display:flex;gap:9px;padding:9px 0;border-bottom:1px solid #EDF2EE;font-size:12.5px"><span style="color:var(--emerald);font-weight:900">→</span><span>${esc(r)}</span></div>`).join("")||`<div class="empty">Рекомендаций нет</div>`;
+}
+
+function renderSettings(){
+  const s=S.settings;
+  $("#sComm").value=s.comm; $("#sLog").value=s.log; $("#sTax").value=s.tax; $("#sMin").value=s.minMargin;
+  $("#storeInfo").textContent=`Ключ: ${KEY}. Товаров: ${S.products.length}. Задач: ${S.tasks.length}. Роль: ${S.role}.`;
+}
+
+/* ---------- modal ---------- */
+function closeModal(){$("#backdrop").classList.remove("open");}
+function openTask(id){
+  if(!canEdit()) return toast("Недостаточно прав");
+  const t=id?S.tasks.find(x=>x.id===id):null;
+  $("#modal").innerHTML=`<h3>${t?"Задача":"Новая задача"}</h3><p class="s">Задача привязывается к SKU — так её видно и в канбане, и в карточке товара.</p>
+    <div class="fields">
+      <div class="f full"><label>Название</label><input id="mT" value="${t?esc(t.title):""}" placeholder="Что нужно сделать"></div>
+      <div class="f"><label>SKU</label><select id="mSku">${S.products.map(p=>`<option ${t&&t.sku===p.sku?"selected":""}>${p.sku}</option>`).join("")}<option ${t&&t.sku==="—"?"selected":""}>—</option></select></div>
+      <div class="f"><label>Тип</label><select id="mType">${TYPES.map(x=>`<option ${t&&t.type===x?"selected":""}>${x}</option>`).join("")}</select></div>
+      <div class="f"><label>Приоритет</label><select id="mPrio">${Object.entries(PRIO).map(([k,v])=>`<option value="${k}" ${t&&t.prio===k?"selected":""}>${v.n}</option>`).join("")}</select></div>
+      <div class="f"><label>Дедлайн</label><input id="mDue" type="date" value="${t?t.due:iso(2)}"></div>
+      <div class="f"><label>Исполнитель</label><select id="mWho">${Object.entries(WHO).map(([k,v])=>`<option value="${k}" ${t&&t.who===k?"selected":""}>${v}</option>`).join("")}</select></div>
+      <div class="f"><label>Статус</label><select id="mSt">${STATUS.map(s=>`<option value="${s.id}" ${t&&t.status===s.id?"selected":""}>${s.name}</option>`).join("")}</select></div>
+    </div>
+    <div class="mfoot">${t?`<button class="btn ghost" id="mDel" style="margin-right:auto;color:var(--red)">Удалить</button>`:""}
+      <button class="btn ghost" id="mCancel">Отмена</button><button class="btn lime" id="mSave">${t?"Сохранить":"Создать"}</button></div>`;
+  $("#backdrop").classList.add("open");
+  $("#mCancel").onclick=closeModal;
+  $("#mSave").onclick=()=>{
+    const title=$("#mT").value.trim(); if(!title) return toast("Введите название");
+    const data={title,sku:$("#mSku").value,type:$("#mType").value,prio:$("#mPrio").value,due:$("#mDue").value,who:$("#mWho").value,status:$("#mSt").value};
+    if(t) Object.assign(t,data); else S.tasks.unshift({id:uid(),...data});
+    save(); closeModal(); render(); toast(t?"Задача обновлена":"Задача создана");
+  };
+  if(t) $("#mDel").onclick=()=>{S.tasks=S.tasks.filter(x=>x.id!==t.id);save();closeModal();render();toast("Удалено");};
+  $("#mT").focus();
+}
+
+/* ---------- export ---------- */
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+
+/* ---------- events ---------- */
+$("#nav").addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(!b)return;S.view=b.dataset.view;save();render();});
+document.addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(g){S.view=g.dataset.goto;save();render();}});
+$("#roleSwitch").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-role]");if(!b)return;
+  S.role=b.dataset.role;save();
+  $$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x===b));
+  render();toast(`Роль: ${b.textContent}`);
+});
+$("#addTask").onclick=()=>openTask(null);
+$("#fSku").onchange=renderBoard; $("#fPrio").onchange=renderBoard;
+$("#saveSettings").onclick=()=>{
+  if(S.role==="viewer") return toast("Недостаточно прав");
+  S.settings={comm:+$("#sComm").value,log:+$("#sLog").value,tax:+$("#sTax").value,minMargin:+$("#sMin").value};
+  save();render();toast("Параметры применены");
+};
+$("#fakeApi").onclick=()=>toast("Демо: API-ключи не заданы. Нужны Client-Id и Api-Key.");
+$("#resetAll").onclick=()=>{if(confirm("Сбросить все данные?")){S=seed();save();render();toast("Демо-данные восстановлены");}};
+$("#exportCsv").onclick=()=>{
+  const head=["SKU","Название","Категория","Цена","Себестоимость","Остаток","Продаж/день","Оборачиваемость","Маржа %","ABC"];
+  const rows=S.products.map(p=>[p.sku,p.name,p.cat,p.price,p.cost,p.stock,p.sales,(turnover(p)??"—"),margin(p).pct.toFixed(1),p.abc]);
+  download("sellerflow-products.csv",[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"),"text/csv;charset=utf-8");
+  toast("CSV выгружен");
+};
+$("#rangeBtn").onclick=()=>toast("В MVP доступен фиксированный период 14 дней");
+$("#backdrop").addEventListener("click",e=>{if(e.target.id==="backdrop")closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
+$$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.role===S.role));
+render();
+</script>
+</body>
+</html>

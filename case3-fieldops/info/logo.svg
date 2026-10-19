@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="FieldOps">
+  <rect width="64" height="64" rx="15" fill="#0F2742"/>
+  <path d="M32 12c-7.7 0-14 6.1-14 13.7C18 36.6 32 52 32 52s14-15.4 14-26.3C46 18.1 39.7 12 32 12Z" fill="#F97316"/>
+  <path d="M25.5 26.5l4.6 4.6 8.6-9" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

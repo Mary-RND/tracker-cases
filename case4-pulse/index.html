@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse — командный трекер задач</title>
+<link rel="icon" href="info/logo.svg">
+<style>
+  :root{
+    --graphite:#15171C; --slate:#23262E; --coral:#FF5A5F; --aqua:#2DD4BF;
+    --amber:#FBBF24; --paper:#F7F7F8; --card:#fff; --line:#E6E6EA;
+    --muted:#767B87; --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif; background:var(--paper); color:#1B1D23; font-size:14px; -webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  h1,h2,h3,h4{margin:0;letter-spacing:-.02em;font-family:Manrope,"Segoe UI",sans-serif}
+  .num{font-variant-numeric:tabular-nums}
+  .app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+
+  .side{background:var(--graphite);color:#A9AEBA;padding:20px 12px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;gap:10px;align-items:center;padding:0 8px}
+  .brand img{width:34px;height:34px}
+  .brand b{color:#fff;display:block;font-size:15px;line-height:1.1;font-family:Manrope,sans-serif}
+  .brand span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#6E7481}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav button{display:flex;align-items:center;gap:10px;padding:10px 11px;border-radius:8px;font-size:12.5px;font-weight:600;color:#9BA1AD;text-align:left;transition:.14s}
+  .nav button svg{width:16px;height:16px;flex:none;opacity:.8}
+  .nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav button.on{background:var(--coral);color:#fff}
+  .side-foot{margin-top:auto;font-size:10.5px;color:#6E7481;line-height:1.6;padding:0 8px}
+  .side-foot a{color:#9BA1AD;text-decoration:none;font-weight:700}
+  .sprintbox{background:#1D2027;border-radius:9px;padding:11px;font-size:11px;line-height:1.5;color:#9BA1AD}
+  .sprintbox b{color:#fff;display:block;font-size:12px;margin-bottom:2px}
+
+  main{padding:18px 24px 40px;min-width:0}
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .top h1{font-size:22px;font-weight:800}
+  .top .sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .grow{flex:1}
+  .seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+  .seg button{padding:6px 10px;border-radius:7px;font-size:11px;font-weight:700;color:var(--muted)}
+  .seg button.on{background:var(--graphite);color:#fff}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:8px;background:var(--graphite);color:#fff;font-weight:700;font-size:12px;min-height:38px;transition:.14s}
+  .btn:hover{background:#2C3038}
+  .btn.coral{background:var(--coral)} .btn.coral:hover{background:#F04449}
+  .btn.ghost{background:#fff;border:1px solid var(--line);color:#1B1D23}
+  .btn.ghost:hover{border-color:var(--coral);color:var(--coral)}
+  .btn.sm{padding:6px 10px;font-size:11px;min-height:32px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;position:relative}
+  .kpi span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+  .kpi b{display:block;font-size:27px;margin-top:5px;font-family:Manrope,sans-serif}
+  .kpi small{font-size:11px;font-weight:700;color:var(--muted)}
+  .kpi small.bad{color:var(--coral)}
+  .kpi:after{content:"";position:absolute;right:12px;top:12px;width:7px;height:7px;border-radius:50%;background:var(--coral)}
+  .kpi.k2:after{background:var(--aqua)} .kpi.k3:after{background:var(--amber)} .kpi.k4:after{background:#C4C7CF}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800}
+  .card-h p{font-size:11.5px;color:var(--muted);margin:1px 0 0}
+  .card-h .btn{margin-left:auto}
+  .cols{display:grid;grid-template-columns:1.45fr 1fr;gap:12px;align-items:start}
+
+  .board{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;align-items:start}
+  .col{background:#EFF0F2;border-radius:11px;padding:9px;min-height:150px;border:1px solid transparent;transition:.14s}
+  .col.over{border-color:var(--coral);background:#FFEEEF}
+  .col.limit{border-color:var(--amber);background:#FFF9E8}
+  .col-h{display:flex;align-items:center;gap:6px;padding:2px 4px 9px}
+  .col-h h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:800}
+  .col-h .n{margin-left:auto;font-size:10px;font-weight:800;background:#fff;border-radius:5px;padding:2px 6px;color:var(--muted)}
+  .col-h .n.full{background:var(--amber);color:#3D2E00}
+  .tasks{display:flex;flex-direction:column;gap:7px}
+  .task{background:#fff;border:1px solid var(--line);border-radius:9px;padding:10px;cursor:grab;transition:.14s}
+  .task:hover{box-shadow:0 4px 12px rgba(21,23,28,.08);transform:translateY(-1px)}
+  .task.dragging{opacity:.4}
+  .task .tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+  .tg{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:#F1F2F4;color:#5A606C}
+  .pr{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px}
+  .pr-high{background:#FFE4E5;color:#B42328} .pr-mid{background:#FFF3D6;color:#8A6200} .pr-low{background:#E6F7F4;color:#0B6B60}
+  .task h4{font-size:12px;font-weight:700;line-height:1.35;margin:0 0 7px}
+  .task .meta{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted)}
+  .task .meta .late{color:var(--coral);font-weight:800}
+  .ava{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:8.5px;font-weight:800;flex:none}
+  .task .meta .ava{margin-left:auto}
+  .task .bar{height:3px;background:#F1F2F4;border-radius:2px;margin-top:7px;overflow:hidden}
+  .task .bar i{display:block;height:100%;background:var(--aqua)}
+
+  .list-item{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid #F0F1F3;font-size:12px}
+  .list-item:last-child{border:0}
+  .list-item .t{min-width:0;flex:1}
+  .list-item .t b{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .list-item .t span{font-size:10.5px;color:var(--muted)}
+  .list-item .due{font-size:10.5px;font-weight:700;white-space:nowrap}
+  .list-item .due.late{color:var(--coral)}
+
+  .tw{overflow:auto;margin:0 -16px -16px;padding:0 16px 4px}
+  table{width:100%;border-collapse:collapse;font-size:12px;min-width:640px}
+  th{text-align:left;padding:8px;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;font-weight:800;cursor:pointer}
+  td{padding:9px 8px;border-bottom:1px solid #F0F1F3;vertical-align:middle}
+  tbody tr:hover td{background:#FAFAFB}
+  .pbar{height:5px;background:#EFF0F2;border-radius:3px;overflow:hidden;margin-top:5px}
+  .pbar i{display:block;height:100%;background:var(--aqua)}
+
+  .proj{border:1px solid var(--line);border-radius:11px;padding:13px;display:flex;flex-direction:column;gap:7px;background:#fff}
+  .proj .h{display:flex;align-items:center;gap:8px}
+  .proj .h b{font-size:13px}
+  .code{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:4px;background:#F1F2F4;color:#5A606C}
+  .proj .meta{font-size:10.5px;color:var(--muted);display:flex;gap:8px}
+  .proj .meta b{margin-left:auto;color:#1B1D23}
+  .proj .ppl{display:flex;gap:-4px}
+  .proj .ppl .ava{margin-right:-5px;border:2px solid #fff}
+
+  .burndown{height:170px;position:relative;padding:6px 0 22px}
+  .burndown svg{width:100%;height:100%;overflow:visible}
+  .legend{display:flex;gap:14px;font-size:10.5px;color:var(--muted);margin-top:4px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:4px}
+
+  .empty{padding:22px;text-align:center;color:var(--muted);font-size:11.5px;line-height:1.6}
+  .note{font-size:11px;color:var(--muted);background:#FAFAFB;border:1px dashed var(--line);border-radius:8px;padding:10px;line-height:1.55;margin-top:12px}
+  .view{display:none} .view.on{display:block}
+  .backdrop{position:fixed;inset:0;background:rgba(21,23,28,.5);display:none;place-items:center;padding:16px;z-index:40}
+  .backdrop.open{display:grid}
+  .modal{background:#fff;border-radius:14px;padding:20px;width:min(560px,100%);max-height:92vh;overflow:auto;box-shadow:0 26px 70px rgba(21,23,28,.32)}
+  .modal h3{font-size:17px;margin-bottom:3px}
+  .modal .s{font-size:11.5px;color:var(--muted);margin:0 0 15px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .f{display:flex;flex-direction:column;gap:4px}
+  .f.full{grid-column:1/-1}
+  .f label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .f input,.f select,.f textarea{border:1px solid var(--line);border-radius:7px;padding:8px 9px;font-size:12px;background:#FBFBFC;outline:none}
+  .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--coral);background:#fff}
+  .mfoot{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;background:var(--graphite);color:#fff;padding:10px 17px;border-radius:8px;font-size:12px;font-weight:600;transition:.22s;z-index:60;pointer-events:none;max-width:92vw;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .modal .cmt{font-size:11.5px;border-top:1px solid var(--line);padding-top:10px;margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:150px;overflow:auto}
+  .modal .cmt div{background:#FAFAFB;border-radius:7px;padding:7px 9px}
+  .modal .cmt b{font-size:11px} .modal .cmt span{color:var(--muted);font-size:10px}
+
+  @media (max-width:1120px){
+    .app{grid-template-columns:1fr}
+    .side{position:static;height:auto;flex-direction:row;align-items:center;gap:12px;padding:10px 12px;overflow-x:auto}
+    .side-foot,.sprintbox{display:none}
+    .nav{flex-direction:row}.nav button{white-space:nowrap}
+    .kpis{grid-template-columns:1fr 1fr}
+    .cols{grid-template-columns:1fr}
+    .board{grid-template-columns:repeat(2,minmax(180px,1fr))}
+    main{padding:14px 12px 34px}
+  }
+  @media (max-width:560px){
+    .board{grid-template-columns:1fr}
+    .fields{grid-template-columns:1fr}
+    .kpis{gap:8px}.kpi b{font-size:22px}
+    .top h1{font-size:18px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="info/logo.svg" alt=""><div><b>Pulse</b><span>team tracker</span></div></div>
+    <nav class="nav" id="nav">
+      <button data-view="overview" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Обзор</button>
+      <button data-view="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="9.5" y="4" width="5" height="11" rx="1.5"/><rect x="16" y="4" width="5" height="14" rx="1.5"/></svg>Канбан</button>
+      <button data-view="projects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>Проекты</button>
+      <button data-view="sprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M4 19V5m0 14h16"/><path d="M7 15l4-5 3 3 5-7"/></svg>Спринт</button>
+      <button data-view="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 3h14v18H5z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Отчёт</button>
+    </nav>
+    <div class="sprintbox" id="sprintBox"></div>
+    <div class="side-foot">Демо · данные в браузере<br><br><a href="info/tz.md">ТЗ</a> · <a href="info/api.md">API</a> · <a href="info/brandbook.md">Брендбук</a></div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div><h1 id="pageTitle">Обзор</h1><div class="sub" id="pageSub">Мои задачи, просрочки и прогресс спринта</div></div>
+      <div class="grow"></div>
+      <div class="seg" id="roleSwitch">
+        <button data-role="manager" class="on">Менеджер</button>
+        <button data-role="dev">Исполнитель</button>
+        <button data-role="viewer">Наблюдатель</button>
+      </div>
+      <button class="btn coral" id="newTask">+ Задача</button>
+    </div>
+
+    <!-- OVERVIEW -->
+    <section class="view on" id="view-overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Мои задачи</h2><p>Ближайшие дедлайны</p></div><button class="btn ghost sm" data-goto="board">Канбан</button></div>
+          <div id="mine"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Загрузка команды</h2><p>Активные задачи по людям</p></div></div>
+          <div id="team"></div>
+          <div class="note" id="wipNote"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Прогресс спринта</h2><p>По задачам активного спринта</p></div></div>
+        <div id="sprintProgress"></div>
+      </div>
+    </section>
+
+    <!-- BOARD -->
+    <section class="view" id="view-board">
+      <div class="card" style="margin-bottom:11px;padding:9px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="fProj" class="btn ghost sm" style="padding:6px 9px"><option value="">Все проекты</option></select>
+        <select id="fWho" class="btn ghost sm" style="padding:6px 9px"><option value="">Все исполнители</option></select>
+        <select id="fPrio" class="btn ghost sm" style="padding:6px 9px"><option value="">Любой приоритет</option><option value="high">Высокий</option><option value="mid">Средний</option><option value="low">Низкий</option></select>
+        <input id="fQ" placeholder="Поиск задачи" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:11.5px;outline:none">
+        <span style="font-size:11px;color:var(--muted)" id="bCount"></span>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="note">WIP-лимит: не больше 5 задач в «В работе». Ограничение помогает не брать больше, чем команда успевает.</div>
+    </section>
+
+    <!-- PROJECTS -->
+    <section class="view" id="view-projects">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px" id="projects"></div>
+    </section>
+
+    <!-- SPRINT -->
+    <section class="view" id="view-sprint">
+      <div class="cols">
+        <div class="card">
+          <div class="card-h"><div><h2>Burndown спринта</h2><p>Осталось часов по дням</p></div></div>
+          <div class="burndown" id="burndown"></div>
+          <div class="legend"><span><i style="background:#C4C7CF"></i>Идеальная линия</span><span><i style="background:#FF5A5F"></i>Факт</span></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><h2>Ёмкость</h2><p>План и факт по исполнителям</p></div></div>
+          <div id="capacity"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Задачи вне спринта</h2><p>Бэклог, который ждёт планирования</p></div><button class="btn ghost sm" id="pullSprint">Добавить в спринт</button></div>
+        <div id="outside"></div>
+      </div>
+    </section>
+
+    <!-- REPORT -->
+    <section class="view" id="view-report">
+      <div class="kpis" id="kpis2"></div>
+      <div class="card">
+        <div class="card-h"><div><h2>План / факт по исполнителям</h2><p>Оценка в часах и фактически внесённое время</p></div><button class="btn ghost sm" id="exportCsv">CSV</button></div>
+        <div class="tw"><table><thead><tr><th>Исполнитель</th><th>Задач</th><th>Оценка, ч</th><th>Факт, ч</th><th>Выполнено</th><th>Просрочено</th><th>Загрузка</th></tr></thead>
+        <tbody id="repBody"></tbody></table></div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Время по задачам</h2><p>Последние записи</p></div></div>
+        <div id="timeLog"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="pulse.v1";
+const ST=[
+  {id:"backlog",n:"Бэклог"},{id:"todo",n:"К выполнению"},
+  {id:"progress",n:"В работе"},{id:"review",n:"На проверке"},{id:"done",n:"Готово"}
+];
+const WIP=5;
+const PEOPLE={
+  anna:{name:"Анна К.",color:"#FF5A5F",init:"АК",role:"Менеджер"},
+  ivan:{name:"Иван П.",color:"#2DD4BF",init:"ИП",role:"Разработчик"},
+  olga:{name:"Ольга С.",color:"#8B5CF6",init:"ОС",role:"Дизайнер"},
+  dmitry:{name:"Дмитрий Л.",color:"#FBBF24",init:"ДЛ",role:"Разработчик"}
+};
+const ME="ivan";
+const PRIO={high:{n:"Высокий",c:"pr-high"},mid:{n:"Средний",c:"pr-mid"},low:{n:"Низкий",c:"pr-low"}};
+
+function iso(d){const x=new Date();x.setDate(x.getDate()+d);return x.toISOString().slice(0,10);}
+function uid(){return Date.now()+Math.floor(Math.random()*900);}
+function seed(){
+  return {
+    role:"manager", view:"overview", me:ME, sprint:{name:"Спринт 14",start:iso(-4),end:iso(5),capacity:120},
+    projects:[
+      {id:1,name:"Личный кабинет",code:"LK",color:"#FF5A5F",owner:"anna",members:["anna","ivan","olga"],due:iso(21),desc:"Редизайн ЛК и новые настройки профиля"},
+      {id:2,name:"Мобильное приложение",code:"APP",color:"#2DD4BF",owner:"ivan",members:["ivan","dmitry","olga"],due:iso(35),desc:"MVP на React Native, iOS + Android"},
+      {id:3,name:"Интеграция с оплатой",code:"PAY",color:"#8B5CF6",owner:"dmitry",members:["dmitry","ivan"],due:iso(12),desc:"Эквайринг, возвраты, вебхуки"}
+    ],
+    tasks:[
+      {id:1,title:"Собрать макет экрана настроек",proj:1,who:"olga",status:"progress",prio:"high",est:8,spent:5,due:iso(1),tags:["дизайн"],sprint:true,check:[1,0,0],comments:[{who:"anna",text:"Нужен светлый вариант",at:Date.now()-36e5}]},
+      {id:2,title:"API профиля: GET/PATCH",proj:1,who:"ivan",status:"review",prio:"high",est:12,spent:11,due:iso(0),tags:["backend"],sprint:true,check:[1,1,1],comments:[]},
+      {id:3,title:"Валидация телефона и почты",proj:1,who:"ivan",status:"todo",prio:"mid",est:5,spent:0,due:iso(3),tags:["frontend"],sprint:true,check:[0,0],comments:[]},
+      {id:4,title:"Экран онбординга",proj:2,who:"olga",status:"progress",prio:"mid",est:10,spent:4,due:iso(2),tags:["дизайн"],sprint:true,check:[1,0,0,0],comments:[]},
+      {id:5,title:"Авторизация по SMS",proj:2,who:"dmitry",status:"progress",prio:"high",est:16,spent:9,due:iso(-1),tags:["mobile"],sprint:true,check:[1,0,0],comments:[]},
+      {id:6,title:"Пуш-уведомления",proj:2,who:"ivan",status:"backlog",prio:"low",est:8,spent:0,due:iso(9),tags:["mobile"],sprint:false,check:[0],comments:[]},
+      {id:7,title:"Вебхук успешной оплаты",proj:3,who:"dmitry",status:"progress",prio:"high",est:6,spent:5,due:iso(0),tags:["backend"],sprint:true,check:[1,1],comments:[]},
+      {id:8,title:"Возвраты: сценарий и API",proj:3,who:"ivan",status:"todo",prio:"high",est:9,spent:0,due:iso(4),tags:["backend"],sprint:true,check:[0,0],comments:[]},
+      {id:9,title:"Тест-кейсы для оплаты",proj:3,who:"anna",status:"progress",prio:"mid",est:4,spent:2,due:iso(2),tags:["qa"],sprint:true,check:[1,0],comments:[]},
+      {id:10,title:"Компонент таблицы",proj:1,who:"ivan",status:"done",prio:"mid",est:6,spent:7,due:iso(-3),tags:["frontend"],sprint:true,check:[1,1],comments:[]},
+      {id:11,title:"Тёмная тема",proj:1,who:"olga",status:"backlog",prio:"low",est:12,spent:0,due:iso(14),tags:["дизайн"],sprint:false,check:[0,0,0],comments:[]},
+      {id:12,title:"Релиз 0.9 на TestFlight",proj:2,who:"dmitry",status:"review",prio:"mid",est:3,spent:2,due:iso(1),tags:["release"],sprint:true,check:[1,0],comments:[]}
+    ],
+    time:[
+      {id:1,task:2,who:"ivan",hours:5,at:Date.now()-864e5,note:"Эндпоинты + тесты"},
+      {id:2,task:2,who:"ivan",hours:6,at:Date.now()-36e5,note:"Правки после ревью"},
+      {id:3,task:5,who:"dmitry",hours:9,at:Date.now()-2*864e5,note:"Интеграция SMS-шлюза"},
+      {id:4,task:10,who:"ivan",hours:7,at:Date.now()-3*864e5,note:"Таблица + сортировка"}
+    ]
+  };
+}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return seed();}
+let S=load();
+const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2500);}
+function fmt(d){if(!d)return"—";return new Date(d+"T00:00:00").toLocaleDateString("ru-RU",{day:"numeric",month:"short"});}
+function proj(id){return S.projects.find(p=>p.id===id)||{name:"—",code:"—",color:"#999"};}
+function canEdit(){return S.role!=="viewer";}
+function canDelete(t){return S.role==="manager"||(S.role==="dev"&&t.who===S.me);}
+
+const TITLES={overview:["Обзор","Мои задачи, просрочки и прогресс спринта"],board:["Канбан","Задачи по статусам и WIP-лимит"],projects:["Проекты","Прогресс и участники"],sprint:["Спринт","Burndown и ёмкость"],report:["Отчёт","План, факт и загрузка"]};
+
+function render(){
+  const [a,b]=TITLES[S.view]||TITLES.overview;
+  $("#pageTitle").textContent=a; $("#pageSub").textContent=b;
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+S.view));
+  $$("#nav button").forEach(x=>x.classList.toggle("on",x.dataset.view===S.view));
+  $("#newTask").style.display=canEdit()?"":"none";
+  const st=S.tasks.filter(t=>t.sprint&&t.status!=="done");
+  const hours=st.reduce((a,t)=>a+Math.max(0,t.est-t.spent),0);
+  $("#sprintBox").innerHTML=`<b>${S.sprint.name}</b>${fmt(S.sprint.start)} — ${fmt(S.sprint.end)}<br>Осталось ${hours} ч из ${S.sprint.capacity} ч`;
+  renderOverview(); renderBoard(); renderProjects(); renderSprint(); renderReport();
+}
+
+function renderOverview(){
+  const mine=S.tasks.filter(t=>t.who===S.me&&t.status!=="done");
+  const late=S.tasks.filter(t=>t.status!=="done"&&t.due<iso(0));
+  const sp=S.tasks.filter(t=>t.sprint);
+  const spDone=sp.filter(t=>t.status==="done").length;
+  const spent=S.tasks.reduce((a,t)=>a+t.spent,0);
+  $("#kpis").innerHTML=`
+    <div class="kpi"><span>Мои задачи</span><b class="num">${mine.length}</b><small>в работе и очереди</small></div>
+    <div class="kpi k2"><span>Спринт</span><b class="num">${spDone}/${sp.length}</b><small>задач закрыто</small></div>
+    <div class="kpi k3"><span>Просрочено</span><b class="num">${late.length}</b><small class="${late.length?"bad":""}">${late.length?"нужно разобрать":"все в срок"}</small></div>
+    <div class="kpi k4"><span>Факт, ч</span><b class="num">${spent}</b><small>по всем задачам</small></div>`;
+
+  $("#mine").innerHTML=mine.sort((a,b)=>a.due.localeCompare(b.due)).map(t=>`<div class="list-item">
+    <span class="code" style="background:${proj(t.proj).color}1a;color:${proj(t.proj).color}">${proj(t.proj).code}</span>
+    <div class="t"><b>${esc(t.title)}</b><span>${ST.find(s=>s.id===t.status).n} · ${t.est} ч оценка</span></div>
+    <span class="due ${t.due<iso(0)?"late":""}">${fmt(t.due)}</span></div>`).join("")||`<div class="empty">Свободно — можно взять задачу из бэклога</div>`;
+
+  const counts={};
+  S.tasks.filter(t=>t.status!=="done").forEach(t=>counts[t.who]=(counts[t.who]||0)+1);
+  const max=Math.max(1,...Object.values(counts));
+  $("#team").innerHTML=Object.entries(PEOPLE).map(([k,v])=>{
+    const n=counts[k]||0;
+    return `<div style="display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid #F0F1F3">
+      <span class="ava" style="background:${v.color}">${v.init}</span>
+      <div style="min-width:0"><b style="font-size:11.5px">${v.name}</b><div style="font-size:10px;color:var(--muted)">${v.role}</div></div>
+      <div class="pbar" style="flex:1;margin:0"><i style="width:${n/max*100}%;background:${v.color}"></i></div>
+      <b style="font-size:11.5px;min-width:14px;text-align:right">${n}</b></div>`;
+  }).join("");
+  const inProgress=S.tasks.filter(t=>t.status==="progress").length;
+  $("#wipNote").innerHTML=`В работе: <b>${inProgress} из ${WIP}</b>. ${inProgress>=WIP?"Лимит достигнут — сначала завершите текущие.":"Есть место ещё для "+(WIP-inProgress)+"."}`;
+
+  $("#sprintProgress").innerHTML=sp.map(t=>{
+    const p=Math.min(100,Math.round(t.spent/t.est*100));
+    return `<div style="margin-bottom:9px">
+      <div style="display:flex;font-size:11.5px;gap:8px"><span class="code" style="background:${proj(t.proj).color}1a;color:${proj(t.proj).color}">${proj(t.proj).code}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</span>
+      <b>${t.spent}/${t.est} ч</b></div>
+      <div class="pbar"><i style="width:${p}%;background:${p>100?"#FF5A5F":"#2DD4BF"}"></i></div></div>`;
+  }).join("");
+}
+
+function renderBoard(){
+  const fp=$("#fProj"), fw=$("#fWho");
+  if(fp.options.length<=1){
+    fp.innerHTML=`<option value="">Все проекты</option>`+S.projects.map(p=>`<option value="${p.id}">${p.code} · ${p.name}</option>`).join("");
+    fw.innerHTML=`<option value="">Все исполнители</option>`+Object.entries(PEOPLE).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+  }
+  const q=$("#fQ").value.trim().toLowerCase();
+  const list=S.tasks.filter(t=>(!fp.value||t.proj===+fp.value)&&(!fw.value||t.who===fw.value)&&(!$("#fPrio").value||t.prio===$("#fPrio").value)&&(!q||t.title.toLowerCase().includes(q)));
+  $("#bCount").textContent=`${list.length} задач`;
+  $("#board").innerHTML=ST.map(c=>{
+    const items=list.filter(t=>t.status===c.id);
+    const full=c.id==="progress"&&items.length>=WIP;
+    return `<div class="col ${full?"limit":""}" data-status="${c.id}">
+      <div class="col-h"><h3>${c.n}</h3><span class="n ${full?"full":""}">${c.id==="progress"?items.length+"/"+WIP:items.length}</span></div>
+      <div class="tasks">${items.map(card).join("")||`<div class="empty" style="padding:14px;font-size:10.5px">Пусто</div>`}</div></div>`;
+  }).join("");
+  $$(".task").forEach(el=>{
+    el.addEventListener("dragstart",e=>{el.classList.add("dragging");e.dataTransfer.setData("text/plain",el.dataset.id);});
+    el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+    el.addEventListener("dblclick",()=>openTask(+el.dataset.id));
+  });
+  $$(".col").forEach(col=>{
+    col.addEventListener("dragover",e=>{e.preventDefault();col.classList.add("over");});
+    col.addEventListener("dragleave",()=>col.classList.remove("over"));
+    col.addEventListener("drop",e=>{e.preventDefault();col.classList.remove("over");move(+e.dataTransfer.getData("text/plain"),col.dataset.status);});
+  });
+}
+
+function card(t){
+  const p=proj(t.proj), late=t.due<iso(0)&&t.status!=="done", w=PEOPLE[t.who];
+  const pct=t.est?Math.min(100,Math.round(t.spent/t.est*100)):0;
+  return `<article class="task" draggable="true" data-id="${t.id}">
+    <div class="tags"><span class="code" style="background:${p.color}1a;color:${p.color}">${p.code}</span>
+      <span class="pr ${PRIO[t.prio].c}">${PRIO[t.prio].n}</span>
+      ${t.sprint?'<span class="tg">спринт</span>':""}</div>
+    <h4>${esc(t.title)}</h4>
+    <div class="meta"><span class="${late?"late":""}">${fmt(t.due)}</span><span>·</span><span>${t.spent}/${t.est} ч</span>
+      <span class="ava" style="background:${w.color}">${w.init}</span></div>
+    <div class="bar"><i style="width:${pct}%;background:${pct>100?"#FF5A5F":w.color}"></i></div>
+  </article>`;
+}
+
+function move(id,st){
+  if(!canEdit()) return toast("Роль «Наблюдатель» не может менять задачи");
+  const t=S.tasks.find(x=>x.id===id); if(!t||t.status===st) return;
+  if(st==="done"&&t.status!=="review") return toast("Сначала отправьте задачу на проверку");
+  if(st==="progress"&&t.status!=="progress"){
+    const n=S.tasks.filter(x=>x.status==="progress").length;
+    if(n>=WIP) return toast(`WIP-лимит: в работе уже ${WIP} задач`);
+  }
+  t.status=st; save(); render(); toast(`«${t.title.slice(0,26)}…» → ${ST.find(s=>s.id===st).n}`);
+}
+
+function renderProjects(){
+  $("#projects").innerHTML=S.projects.map(p=>{
+    const ts=S.tasks.filter(t=>t.proj===p.id);
+    const done=ts.filter(t=>t.status==="done").length;
+    const pct=ts.length?Math.round(done/ts.length*100):0;
+    const late=ts.filter(t=>t.status!=="done"&&t.due<iso(0)).length;
+    return `<div class="proj">
+      <div class="h"><span style="width:9px;height:9px;border-radius:3px;background:${p.color}"></span><b>${esc(p.name)}</b><span class="code">${p.code}</span></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.45">${esc(p.desc)}</div>
+      <div class="pbar"><i style="width:${pct}%;background:${p.color}"></i></div>
+      <div class="meta"><span>${done}/${ts.length} задач · ${pct}%</span><b>до ${fmt(p.due)}</b></div>
+      <div class="meta"><span>${late?`<span style="color:var(--coral);font-weight:800">${late} просрочено</span>`:"без просрочек"}</span>
+        <div class="ppl" style="margin-left:auto">${p.members.map(m=>`<span class="ava" style="background:${PEOPLE[m].color}">${PEOPLE[m].init}</span>`).join("")}</div></div>
+    </div>`;
+  }).join("");
+}
+
+function renderSprint(){
+  const sp=S.tasks.filter(t=>t.sprint);
+  const total=sp.reduce((a,t)=>a+t.est,0);
+  const start=new Date(S.sprint.start+"T00:00:00"), end=new Date(S.sprint.end+"T00:00:00");
+  const days=Math.max(1,Math.round((end-start)/864e5)+1);
+  const today=Math.max(0,Math.min(days-1,Math.round((Date.now()-start)/864e5)));
+  const points=[];
+  for(let i=0;i<days;i++){
+    const ideal=total*(1-i/(days-1||1));
+    const doneByDay=sp.filter(t=>t.status==="done"&&t.due<=addDays(S.sprint.start,i)).reduce((a,t)=>a+t.est,0);
+    const fact=i<=today?Math.max(0,total-doneByDay):null;
+    points.push({ideal,fact});
+  }
+  const W=560,H=150,max=total||1;
+  const x=i=>i/(days-1||1)*W, y=v=>H-(v/max)*H;
+  const idealPath=points.map((p,i)=>`${i?"L":"M"}${x(i).toFixed(1)},${y(p.ideal).toFixed(1)}`).join(" ");
+  const factPts=points.map((p,i)=>p.fact===null?null:[x(i),y(p.fact)]).filter(Boolean);
+  const factPath=factPts.map((p,i)=>`${i?"L":"M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  $("#burndown").innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    ${[0,.25,.5,.75,1].map(f=>`<line x1="0" y1="${H*f}" x2="${W}" y2="${H*f}" stroke="#F0F1F3" stroke-width="1"/>`).join("")}
+    <path d="${idealPath}" fill="none" stroke="#C4C7CF" stroke-width="2" stroke-dasharray="5 4"/>
+    <path d="${factPath}" fill="none" stroke="#FF5A5F" stroke-width="2.6" stroke-linecap="round"/>
+    ${factPts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.2" fill="#fff" stroke="#FF5A5F" stroke-width="2"/>`).join("")}
+  </svg>
+  <div style="position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-between;font-size:9px;color:var(--muted)">
+    ${Array.from({length:days},(_,i)=>`<span>${i+1}</span>`).join("")}</div>`;
+
+  $("#capacity").innerHTML=Object.entries(PEOPLE).map(([k,v])=>{
+    const ts=sp.filter(t=>t.who===k);
+    const est=ts.reduce((a,t)=>a+t.est,0);
+    const fact=ts.reduce((a,t)=>a+t.spent,0);
+    return `<div style="margin-bottom:11px"><div style="display:flex;font-size:11.5px;margin-bottom:3px">
+      <span class="ava" style="background:${v.color};margin-right:6px">${v.init}</span><b>${v.name}</b>
+      <span style="margin-left:auto;color:var(--muted)">${fact} / ${est} ч</span></div>
+      <div class="pbar" style="height:6px"><i style="width:${est?Math.min(100,fact/est*100):0}%;background:${v.color}"></i></div></div>`;
+  }).join("");
+
+  const outside=S.tasks.filter(t=>!t.sprint&&t.status!=="done");
+  $("#outside").innerHTML=outside.map(t=>`<div class="list-item">
+    <span class="code" style="background:${proj(t.proj).color}1a;color:${proj(t.proj).color}">${proj(t.proj).code}</span>
+    <div class="t"><b>${esc(t.title)}</b><span>${PEOPLE[t.who].name} · ${t.est} ч</span></div>
+    <span class="pr ${PRIO[t.prio].c}">${PRIO[t.prio].n}</span>
+    <button class="btn ghost sm" data-pull="${t.id}">В спринт</button></div>`).join("")||`<div class="empty">Все задачи уже в спринте</div>`;
+  $$("[data-pull]").forEach(b=>b.onclick=()=>{
+    if(!canEdit()) return toast("Недостаточно прав");
+    const t=S.tasks.find(x=>x.id===+b.dataset.pull); t.sprint=true; save(); render(); toast("Задача добавлена в спринт");
+  });
+  $("#pullSprint").onclick=()=>toast("Выберите задачу кнопкой «В спринт»");
+}
+
+function addDays(base,n){const d=new Date(base+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+
+function renderReport(){
+  const late=S.tasks.filter(t=>t.status!=="done"&&t.due<iso(0)).length;
+  const est=S.tasks.reduce((a,t)=>a+t.est,0);
+  const fact=S.tasks.reduce((a,t)=>a+t.spent,0);
+  $("#kpis2").innerHTML=`
+    <div class="kpi"><span>Задач всего</span><b class="num">${S.tasks.length}</b><small>во всех проектах</small></div>
+    <div class="kpi k2"><span>Оценка</span><b class="num">${est} ч</b><small>сумма по задачам</small></div>
+    <div class="kpi k3"><span>Факт</span><b class="num">${fact} ч</b><small>${est?Math.round(fact/est*100):0}% от оценки</small></div>
+    <div class="kpi k4"><span>Просрочено</span><b class="num">${late}</b><small class="${late?"bad":""}">активные задачи</small></div>`;
+  $("#repBody").innerHTML=Object.entries(PEOPLE).map(([k,v])=>{
+    const ts=S.tasks.filter(t=>t.who===k);
+    const e=ts.reduce((a,t)=>a+t.est,0), f=ts.reduce((a,t)=>a+t.spent,0);
+    const done=ts.filter(t=>t.status==="done").length;
+    const l=ts.filter(t=>t.status!=="done"&&t.due<iso(0)).length;
+    return `<tr><td><span style="display:flex;gap:7px;align-items:center"><span class="ava" style="background:${v.color}">${v.init}</span>${v.name}</span></td>
+      <td class="num">${ts.length}</td><td class="num">${e}</td><td class="num">${f}</td><td class="num">${done}</td>
+      <td class="num ${l?"":"pos"}" style="${l?"color:var(--coral);font-weight:800":""}">${l}</td>
+      <td style="min-width:90px"><div class="pbar"><i style="width:${e?Math.min(100,f/e*100):0}%;background:${f>e?"#FF5A5F":"#2DD4BF"}"></i></div>
+      <span style="font-size:9.5px;color:var(--muted)">${e?Math.round(f/e*100):0}%</span></td></tr>`;
+  }).join("");
+  $("#timeLog").innerHTML=[...S.time].sort((a,b)=>b.at-a.at).slice(0,8).map(r=>{
+    const t=S.tasks.find(x=>x.id===r.task)||{title:"—"};
+    return `<div class="list-item"><span class="ava" style="background:${PEOPLE[r.who].color}">${PEOPLE[r.who].init}</span>
+      <div class="t"><b>${esc(t.title)}</b><span>${esc(r.note||"")} · ${new Date(r.at).toLocaleDateString("ru-RU")}</span></div>
+      <b>${r.hours} ч</b></div>`;
+  }).join("")||`<div class="empty">Записей нет</div>`;
+}
+
+function closeModal(){$("#backdrop").classList.remove("open");}
+
+function openTask(id){
+  if(!canEdit()) return toast("Роль «Наблюдатель» не может менять задачи");
+  const t=id?S.tasks.find(x=>x.id===id):null;
+  $("#modal").innerHTML=`<h3>${t?"Задача":"Новая задача"}</h3><p class="s">${t?`#${t.id} · создана в проекте ${proj(t.proj).code}`:"Задача попадёт в выбранный проект"}</p>
+    <div class="fields">
+      <div class="f full"><label>Название</label><input id="tTitle" value="${t?esc(t.title):""}" placeholder="Что нужно сделать"></div>
+      <div class="f"><label>Проект</label><select id="tProj">${S.projects.map(p=>`<option value="${p.id}" ${t&&t.proj===p.id?"selected":""}>${p.code} · ${p.name}</option>`).join("")}</select></div>
+      <div class="f"><label>Исполнитель</label><select id="tWho">${Object.entries(PEOPLE).map(([k,v])=>`<option value="${k}" ${t&&t.who===k?"selected":""}>${v.name}</option>`).join("")}</select></div>
+      <div class="f"><label>Статус</label><select id="tStatus">${ST.map(s=>`<option value="${s.id}" ${t&&t.status===s.id?"selected":""}>${s.n}</option>`).join("")}</select></div>
+      <div class="f"><label>Приоритет</label><select id="tPrio">${Object.entries(PRIO).map(([k,v])=>`<option value="${k}" ${t&&t.prio===k?"selected":""}>${v.n}</option>`).join("")}</select></div>
+      <div class="f"><label>Оценка, ч</label><input id="tEst" type="number" min="0" max="200" value="${t?t.est:4}"></div>
+      <div class="f"><label>Дедлайн</label><input id="tDue" type="date" value="${t?t.due:iso(3)}"></div>
+      <div class="f full"><label>Теги (через запятую)</label><input id="tTags" value="${t?esc(t.tags.join(", ")):"frontend"}"></div>
+    </div>
+    ${t?`<div class="cmt">${t.comments.length?t.comments.map(c=>`<div><b>${PEOPLE[c.who].name}</b> <span>${new Date(c.at).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span><br>${esc(c.text)}</div>`).join(""):`<span style="color:var(--muted);font-size:11px">Комментариев нет</span>`}</div>
+      <div style="display:flex;gap:6px;margin-top:8px"><input id="cText" placeholder="Комментарий" style="flex:1;border:1px solid var(--line);border-radius:7px;padding:8px;font-size:11.5px"><button class="btn ghost sm" id="cAdd">Добавить</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center"><input id="hAdd" type="number" min="0.5" step="0.5" value="1" style="width:74px;border:1px solid var(--line);border-radius:7px;padding:8px;font-size:11.5px"><button class="btn ghost sm" id="hBtn">+ часы</button><span style="font-size:10.5px;color:var(--muted)">факт: ${t.spent} ч</span></div>`:""}
+    <div class="mfoot">${t&&canDelete(t)?`<button class="btn ghost" id="tDel" style="margin-right:auto;color:var(--coral)">Удалить</button>`:""}
+      <button class="btn ghost" id="tCancel">Отмена</button><button class="btn coral" id="tSave">${t?"Сохранить":"Создать"}</button></div>`;
+  $("#backdrop").classList.add("open");
+  $("#tCancel").onclick=closeModal;
+  $("#tSave").onclick=()=>{
+    const title=$("#tTitle").value.trim(); if(!title) return toast("Введите название");
+    const data={title,proj:+$("#tProj").value,who:$("#tWho").value,status:$("#tStatus").value,prio:$("#tPrio").value,
+      est:Math.max(0,+$("#tEst").value||0),due:$("#tDue").value,tags:$("#tTags").value.split(",").map(s=>s.trim()).filter(Boolean)};
+    if(t) Object.assign(t,data);
+    else S.tasks.unshift({id:uid(),spent:0,sprint:true,check:[],comments:[],...data});
+    save(); closeModal(); render(); toast(t?"Задача обновлена":"Задача создана");
+  };
+  if(t){
+    if(canDelete(t)) $("#tDel").onclick=()=>{S.tasks=S.tasks.filter(x=>x.id!==t.id);save();closeModal();render();toast("Удалено");};
+    $("#cAdd").onclick=()=>{
+      const v=$("#cText").value.trim(); if(!v) return;
+      t.comments.push({who:S.role==="dev"?S.me:"anna",text:v,at:Date.now()}); save(); openTask(t.id); toast("Комментарий добавлен");
+    };
+    $("#hBtn").onclick=()=>{
+      const h=+$("#hAdd").value||0; if(h<=0) return;
+      t.spent+=h; S.time.unshift({id:uid(),task:t.id,who:S.me,hours:h,at:Date.now(),note:"Добавлено из карточки"});
+      save(); openTask(t.id); toast(`+${h} ч записано`);
+    };
+  }
+  $("#tTitle").focus();
+}
+
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type}));a.download=name;a.click();URL.revokeObjectURL(a.href);}
+
+$("#nav").addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(!b)return;S.view=b.dataset.view;save();render();});
+document.addEventListener("click",e=>{const g=e.target.closest("[data-goto]");if(g){S.view=g.dataset.goto;save();render();}});
+$("#roleSwitch").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-role]");if(!b)return;
+  S.role=b.dataset.role; save();
+  $$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x===b));
+  render(); toast(S.role==="dev"?`Вы вошли как ${PEOPLE[S.me].name}`:`Роль: ${b.textContent}`);
+});
+$("#newTask").onclick=()=>openTask(null);
+$("#fProj").onchange=renderBoard; $("#fWho").onchange=renderBoard; $("#fPrio").onchange=renderBoard; $("#fQ").oninput=renderBoard;
+$("#exportCsv").onclick=()=>{
+  const head=["ID","Задача","Проект","Исполнитель","Статус","Приоритет","Оценка","Факт","Дедлайн","Спринт"];
+  const rows=S.tasks.map(t=>[t.id,t.title,proj(t.proj).code,PEOPLE[t.who].name,ST.find(s=>s.id===t.status).n,PRIO[t.prio].n,t.est,t.spent,t.due,t.sprint?"да":"нет"]);
+  download("pulse-tasks.csv",[head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n"),"text/csv;charset=utf-8");
+  toast("CSV выгружен");
+};
+$("#backdrop").addEventListener("click",e=>{if(e.target.id==="backdrop")closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+$$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.role===S.role));
+render();
+</script>
+</body>
+</html>

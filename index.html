@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Трекеры на заказ — 5 кейсов · портфолио</title>
+<style>
+  :root{
+    --ink:#14161C; --muted:#6B7180; --line:#E6E7EC; --card:#fff;
+    --paper:#F6F6F8; --accent:#5B4BFF;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,"Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  header{padding:64px 0 40px}
+  .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:800}
+  h1{font-size:clamp(30px,4.4vw,52px);line-height:1.05;letter-spacing:-.035em;margin:14px 0 18px;max-width:880px}
+  .lead{font-size:16px;line-height:1.65;color:#4B5160;max-width:720px}
+  .meta{display:flex;gap:26px;flex-wrap:wrap;margin-top:28px}
+  .meta div{font-size:12px;color:var(--muted)}
+  .meta b{display:block;font-size:20px;color:var(--ink);letter-spacing:-.02em;margin-bottom:2px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:18px;padding:18px 0 20px}
+  .case{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:.18s}
+  .case:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(20,22,28,.09);border-color:#CFD2DB}
+  .shot{height:186px;overflow:hidden;border-bottom:1px solid var(--line);background:#EEEFF3;position:relative}
+  .shot img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+  .body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:9px;flex:1}
+  .row{display:flex;align-items:center;gap:8px}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:5px;background:#F0F1F5;color:#5A6070}
+  .num{font-size:11px;font-weight:800;color:#B4B8C4;margin-left:auto;letter-spacing:.06em}
+  .case h3{font-size:18px;margin:2px 0 0;letter-spacing:-.02em}
+  .case p{font-size:12.5px;line-height:1.6;color:#5A6070;margin:0;flex:1}
+  .facts{display:flex;gap:14px;font-size:11px;color:var(--muted);border-top:1px solid #F0F1F5;padding-top:10px;margin-top:4px;flex-wrap:wrap}
+  .facts b{color:var(--ink)}
+  .links{display:flex;gap:8px;margin-top:6px}
+  .links a{font-size:11.5px;font-weight:800;padding:8px 12px;border-radius:8px;background:var(--ink);color:#fff}
+  .links a.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .links a:hover{opacity:.86}
+  footer{border-top:1px solid var(--line);margin-top:34px;padding:26px 0 44px;font-size:12px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+  footer b{color:var(--ink)}
+  @media(max-width:600px){header{padding:40px 0 24px}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Портфолио · кейс 4 FGIp07</div>
+    <h1>Пять трекеров: от семейных задач до API для команды</h1>
+    <p class="lead">Каждый кейс — реальный заказ с биржи, разобранный по полному маршруту: анализ → вопросы клиенту → ТЗ → MVP → тестирование и доработки → публикация → упаковка услуги. Ниже — рабочие прототипы, которые можно открыть и потрогать.</p>
+    <div class="meta">
+      <div><b>5</b>кейсов</div>
+      <div><b>5</b>рабочих MVP</div>
+      <div><b>3</b>типа ролей и доступа</div>
+      <div><b>100%</b>без бэкенда — localStorage</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <article class="case">
+      <div class="shot"><img src="screenshots/case1_final.png" alt="Звёздный квест"></div>
+      <div class="body">
+        <div class="row"><span class="tag">Семья · геймификация</span><span class="num">01</span></div>
+        <h3>Звёздный квест</h3>
+        <p>Трекер домашних и учебных задач для детей: баллы начисляет родитель после проверки, ребёнок обменивает их в магазине подарков.</p>
+        <div class="facts"><span>Бюджет <b>10 000 ₽</b></span><span>FL.ru</span></div>
+        <div class="links"><a href="case1-starquest/">Открыть MVP</a><a class="ghost" href="case1-starquest/info/tz.md">ТЗ</a></div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div class="shot"><img src="screenshots/case2_final.png" alt="SellerFlow"></div>
+      <div class="body">
+        <div class="row"><span class="tag">E-commerce · аналитика</span><span class="num">02</span></div>
+        <h3>SellerFlow</h3>
+        <p>Задачи селлера маркетплейсов рядом с деньгами: маржа, оборачиваемость, ABC и светофор проблем по каждому SKU.</p>
+        <div class="facts"><span>Бюджет <b>по договору</b></span><span>FL.ru</span></div>
+        <div class="links"><a href="case2-sellerflow/">Открыть MVP</a><a class="ghost" href="case2-sellerflow/info/tz.md">ТЗ</a></div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div class="shot"><img src="screenshots/case3_final.png" alt="FieldOps"></div>
+      <div class="body">
+        <div class="row"><span class="tag">Field service · PWA</span><span class="num">03</span></div>
+        <h3>FieldOps</h3>
+        <p>Заявки и выездные специалисты: диспетчер назначает, специалист закрывает чек-лист и акт, руководитель видит SLA.</p>
+        <div class="facts"><span>Бюджет <b>по договору</b></span><span>FL.ru</span></div>
+        <div class="links"><a href="case3-fieldops/">Открыть MVP</a><a class="ghost" href="case3-fieldops/info/tz.md">ТЗ</a></div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div class="shot"><img src="screenshots/case4_final.png" alt="Pulse"></div>
+      <div class="body">
+        <div class="row"><span class="tag">Команда · спринты</span><span class="num">04</span></div>
+        <h3>Pulse</h3>
+        <p>Командный трекер с проектами, WIP-лимитом, спринтом и burndown. Роли менеджера, исполнителя и наблюдателя.</p>
+        <div class="facts"><span>Бюджет <b>300 000 ₽</b></span><span>FL.ru</span></div>
+        <div class="links"><a href="case4-pulse/">Открыть MVP</a><a class="ghost" href="case4-pulse/info/tz.md">ТЗ</a></div>
+      </div>
+    </article>
+
+    <article class="case">
+      <div class="shot"><img src="screenshots/case5_final.png" alt="TaskAPI"></div>
+      <div class="body">
+        <div class="row"><span class="tag">Backend · контракт</span><span class="num">05</span></div>
+        <h3>TaskAPI</h3>
+        <p>Песочница API трекера: валидация, коды ответов, права ролей и запрет перехода todo → done. Восемь тестов контракта.</p>
+        <div class="facts"><span>Бюджет <b>2 000 ₽</b></span><span>FL.ru</span></div>
+        <div class="links"><a href="case5-taskapi/">Открыть MVP</a><a class="ghost" href="case5-taskapi/info/tz.md">ТЗ</a></div>
+      </div>
+    </article>
+  </div>
+
+  <footer>
+    <span><b>Учебный проект.</b> Заказы не откликались — ТЗ использованы как материал для практики.</span>
+    <span>Данные демонстрационные, хранятся в localStorage браузера.</span>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Звёздный квест — семейный трекер задач</title>
+<link rel="icon" href="info/logo.svg">
+<style>
+  :root{
+    --ink:#1B2A41; --indigo:#3D3A8C; --violet:#6C63FF; --sun:#FFC93C;
+    --coral:#FF6B6B; --mint:#2EC4B6; --paper:#FFF8EC; --card:#fff;
+    --line:#E8E2D6; --muted:#6B7280;
+    --shadow:0 12px 30px rgba(61,58,140,.10);
+    --r:20px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:Inter,"Segoe UI",system-ui,sans-serif; color:var(--ink);
+    background:
+      radial-gradient(900px 500px at 88% -10%, rgba(108,99,255,.14), transparent 60%),
+      radial-gradient(700px 400px at -10% 110%, rgba(255,201,60,.22), transparent 60%),
+      var(--paper);
+    min-height:100vh;
+  }
+  button{font:inherit; cursor:pointer; border:0; background:none; color:inherit}
+  input,select,textarea{font:inherit; color:inherit}
+  h1,h2,h3{margin:0; letter-spacing:-.02em}
+  .shell{display:grid; grid-template-columns:250px 1fr; min-height:100vh}
+
+  /* ---------- sidebar ---------- */
+  .side{
+    padding:26px 18px; border-right:1px solid var(--line);
+    background:rgba(255,255,255,.55); backdrop-filter:blur(6px);
+    display:flex; flex-direction:column; gap:22px; position:sticky; top:0; height:100vh;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:0 6px}
+  .brand img{width:42px;height:42px}
+  .brand b{display:block; font-size:15px; line-height:1.15}
+  .brand span{font-size:11px; color:var(--muted); letter-spacing:.08em; text-transform:uppercase}
+  .nav{display:flex; flex-direction:column; gap:4px}
+  .nav button{
+    display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:12px;
+    font-size:14px; font-weight:600; color:#3f4a5c; text-align:left; transition:.15s;
+  }
+  .nav button svg{width:18px;height:18px;flex:none;opacity:.75}
+  .nav button:hover{background:rgba(61,58,140,.07)}
+  .nav button.on{background:var(--indigo); color:#fff; box-shadow:0 8px 18px rgba(61,58,140,.28)}
+  .nav button.on svg{opacity:1}
+  .side-foot{margin-top:auto; font-size:11.5px; color:var(--muted); line-height:1.5; padding:0 6px}
+
+  /* ---------- topbar ---------- */
+  main{padding:22px 30px 40px; min-width:0}
+  .top{display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:22px}
+  .top h1{font-size:25px; font-weight:800}
+  .top p{margin:3px 0 0; color:var(--muted); font-size:13px}
+  .spacer{flex:1}
+  .role{
+    display:flex; background:#fff; border:1px solid var(--line); border-radius:999px; padding:4px;
+    box-shadow:0 4px 14px rgba(27,42,65,.05);
+  }
+  .role button{padding:8px 15px; border-radius:999px; font-size:12.5px; font-weight:700; color:var(--muted)}
+  .role button.on{background:var(--ink); color:#fff}
+  .balance{
+    display:flex; align-items:center; gap:10px; background:var(--ink); color:#fff;
+    border-radius:16px; padding:9px 16px; box-shadow:var(--shadow);
+  }
+  .balance .star{color:var(--sun); font-size:20px; line-height:1}
+  .balance b{font-size:20px; font-variant-numeric:tabular-nums}
+  .balance small{display:block; font-size:10px; opacity:.65; letter-spacing:.06em; text-transform:uppercase}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:11px 18px;
+    background:var(--indigo); color:#fff; font-weight:700; font-size:13.5px;
+    box-shadow:0 10px 22px rgba(61,58,140,.24); transition:.15s;
+  }
+  .btn:hover{transform:translateY(-1px); box-shadow:0 14px 26px rgba(61,58,140,.3)}
+  .btn.sun{background:var(--sun); color:#3a2b00; box-shadow:0 10px 22px rgba(255,159,28,.3)}
+  .btn.ghost{background:#fff; color:var(--ink); border:1px solid var(--line); box-shadow:none}
+  .btn.ghost:hover{border-color:var(--indigo); color:var(--indigo)}
+  .btn.sm{padding:8px 13px; font-size:12px}
+  .btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none}
+
+  /* ---------- summary ---------- */
+  .summary{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px}
+  .stat{
+    background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:16px 18px;
+    box-shadow:0 6px 18px rgba(27,42,65,.045); position:relative; overflow:hidden;
+  }
+  .stat:after{content:""; position:absolute; inset:auto -20px -30px auto; width:90px; height:90px; border-radius:50%; background:rgba(108,99,255,.08)}
+  .stat span{font-size:11.5px; color:var(--muted); font-weight:600; letter-spacing:.03em}
+  .stat b{display:block; font-size:26px; margin-top:6px; font-variant-numeric:tabular-nums}
+  .stat em{font-style:normal; font-size:11.5px; color:var(--mint); font-weight:700}
+  .stat.warn em{color:var(--coral)}
+
+  /* ---------- kanban ---------- */
+  .board{display:grid; grid-template-columns:repeat(4,minmax(230px,1fr)); gap:14px; align-items:start}
+  .col{
+    background:rgba(255,255,255,.55); border:1px dashed #DFD7C6; border-radius:var(--r);
+    padding:12px; min-height:180px; transition:.15s;
+  }
+  .col.over{border-color:var(--violet); background:rgba(108,99,255,.07)}
+  .col-head{display:flex; align-items:center; gap:8px; padding:2px 6px 12px}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .col-head h3{font-size:13px; font-weight:800; letter-spacing:.02em}
+  .col-head .count{
+    margin-left:auto; background:#fff; border:1px solid var(--line); border-radius:999px;
+    font-size:11px; font-weight:800; padding:2px 8px; color:var(--muted);
+  }
+  .cards{display:flex; flex-direction:column; gap:10px}
+
+  .task{
+    background:#fff; border-radius:16px; padding:14px; border:1px solid #EFEAE0;
+    box-shadow:0 6px 16px rgba(27,42,65,.06); cursor:grab; transition:.15s; position:relative;
+  }
+  .task:hover{transform:translateY(-2px); box-shadow:0 12px 24px rgba(27,42,65,.1)}
+  .task.dragging{opacity:.4}
+  .task-top{display:flex; align-items:center; gap:8px; margin-bottom:8px}
+  .chip{font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:999px; letter-spacing:.02em}
+  .pts{margin-left:auto; font-size:12px; font-weight:800; color:#8a6a00; background:#FFF4CC; padding:3px 8px; border-radius:999px}
+  .task h4{font-size:14px; font-weight:700; line-height:1.35; margin:0 0 6px}
+  .task p{margin:0; font-size:12px; color:var(--muted); line-height:1.45}
+  .task-foot{display:flex; align-items:center; gap:8px; margin-top:11px}
+  .ava{
+    width:26px;height:26px;border-radius:50%; display:grid; place-items:center;
+    font-size:11px; font-weight:800; color:#fff; flex:none;
+  }
+  .due{font-size:11px; color:var(--muted); font-weight:600}
+  .due.late{color:var(--coral)}
+  .task-foot .btn{margin-left:auto}
+  .empty{
+    text-align:center; color:#9AA1AD; font-size:12px; padding:22px 8px; line-height:1.5;
+  }
+  .empty svg{width:26px;height:26px; opacity:.45; display:block; margin:0 auto 8px}
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:#fff; border:1px solid var(--line); border-radius:var(--r);
+    padding:22px; box-shadow:0 8px 22px rgba(27,42,65,.05);
+  }
+  .panel-head{display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap}
+  .panel-head h2{font-size:17px; font-weight:800}
+  .panel-head p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+  .grid2{display:grid; grid-template-columns:1.15fr .85fr; gap:16px; align-items:start}
+  .filters{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px}
+  .filters select,.filters input{
+    border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:12.5px;
+    background:#fff; outline:none;
+  }
+  .filters input:focus,.filters select:focus{border-color:var(--violet)}
+
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:12.5px}
+  th{text-align:left; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); padding:0 10px 10px; font-weight:800}
+  td{padding:11px 10px; border-top:1px solid #F1ECE2; vertical-align:middle}
+  tr:hover td{background:#FFFCF5}
+  .status{font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; white-space:nowrap}
+  .s-new{background:#EEF2FF;color:#4338CA}
+  .s-progress{background:#FFF4CC;color:#8a6a00}
+  .s-review{background:#FFE9E3;color:#B23A2E}
+  .s-done{background:#E3F7F2;color:#12776C}
+
+  /* rewards */
+  .shop{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px}
+  .reward{
+    border:1px solid var(--line); border-radius:16px; padding:16px; background:linear-gradient(180deg,#fff,#FFFCF4);
+    display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden;
+  }
+  .reward .emoji{font-size:30px}
+  .reward h4{font-size:14px; font-weight:800; margin:4px 0 0}
+  .reward .cost{font-size:12px; font-weight:800; color:#8a6a00}
+  .reward .stock{font-size:11px; color:var(--muted)}
+  .reward .btn{margin-top:10px; justify-content:center}
+  .reward.out{opacity:.5}
+  .reward:after{content:""; position:absolute; right:-26px; top:-26px; width:70px;height:70px;border-radius:50%; background:rgba(255,201,60,.18)}
+
+  /* chart */
+  .bars{display:flex; align-items:flex-end; gap:14px; height:170px; padding:10px 4px 0}
+  .bar{flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:6px; height:100%}
+  .bar i{
+    display:block; width:100%; max-width:46px; border-radius:9px 9px 4px 4px; background:linear-gradient(180deg,var(--violet),#8E86FF);
+    min-height:3px; transition:height .5s ease;
+  }
+  .bar b{font-size:11px; font-weight:800; font-variant-numeric:tabular-nums}
+  .bar span{font-size:10px; color:var(--muted); text-align:center; line-height:1.2}
+  .legend{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+  .legend span{font-size:11px; color:var(--muted); display:flex; align-items:center; gap:5px}
+  .legend i{width:9px;height:9px;border-radius:3px;display:block}
+
+  .feed{display:flex; flex-direction:column; gap:2px}
+  .feed div{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #F4EFE6; font-size:12.5px}
+  .feed div:last-child{border:0}
+  .feed b{margin-left:auto; font-variant-numeric:tabular-nums}
+  .plus{color:var(--mint)} .minus{color:var(--coral)}
+
+  .ring{display:flex; align-items:center; gap:18px}
+  .ring svg{width:104px;height:104px; flex:none}
+  .ring strong{font-size:28px; display:block; font-variant-numeric:tabular-nums}
+  .ring small{color:var(--muted); font-size:12px}
+
+  /* modal */
+  .backdrop{
+    position:fixed; inset:0; background:rgba(20,26,40,.45); backdrop-filter:blur(3px);
+    display:none; place-items:center; padding:20px; z-index:50;
+  }
+  .backdrop.open{display:grid}
+  .modal{
+    width:min(560px,100%); background:#fff; border-radius:24px; padding:26px;
+    box-shadow:0 30px 80px rgba(10,15,30,.35); animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:translateY(10px) scale(.98); opacity:0}}
+  .modal h3{font-size:20px; margin-bottom:4px}
+  .modal p.sub{margin:0 0 18px; color:var(--muted); font-size:12.5px}
+  .fields{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .field{display:flex; flex-direction:column; gap:6px}
+  .field.full{grid-column:1/-1}
+  .field label{font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted)}
+  .field input,.field select,.field textarea{
+    border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-size:13px; background:#FFFDF8; outline:none;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--violet); background:#fff}
+  .modal-foot{display:flex; gap:10px; justify-content:flex-end; margin-top:20px}
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px); opacity:0; pointer-events:none;
+    background:var(--ink); color:#fff; padding:12px 20px; border-radius:999px; font-size:13px; font-weight:600;
+    transition:.25s; z-index:80; box-shadow:0 16px 40px rgba(10,15,30,.3); max-width:90vw;
+  }
+  .toast.show{opacity:1; transform:translate(-50%,0)}
+  .view{display:none} .view.on{display:block}
+  .hint{font-size:11.5px; color:var(--muted); background:#FFFCF4; border:1px dashed var(--line); border-radius:12px; padding:10px 12px; margin-top:14px}
+
+  @media (max-width:1100px){
+    .shell{grid-template-columns:1fr}
+    .side{position:static; height:auto; flex-direction:row; align-items:center; gap:14px; overflow-x:auto; padding:14px 16px}
+    .side-foot{display:none}
+    .nav{flex-direction:row}
+    .nav button{white-space:nowrap}
+    .summary{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+    .board{grid-template-columns:repeat(2,minmax(200px,1fr))}
+    main{padding:18px 16px 40px}
+  }
+  @media (max-width:640px){
+    .board{grid-template-columns:1fr}
+    .summary{grid-template-columns:1fr 1fr; gap:10px}
+    .stat b{font-size:21px}
+    .top h1{font-size:20px}
+    .role{order:3}
+    .balance{padding:7px 12px}
+    .balance b{font-size:17px}
+    .fields{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">
+      <img src="info/logo.svg" alt="">
+      <div><b>Звёздный квест</b><span>семейный трекер</span></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-view="board" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="16" rx="2"/><rect x="14" y="4" width="7" height="10" rx="2"/></svg>Канбан</button>
+      <button data-view="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Все задания</button>
+      <button data-view="shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 9h16l-1.2 10H5.2L4 9Z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></svg>Магазин</button>
+      <button data-view="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m0 14h16"/><path d="M8 15v-4m4 4V7m4 8v-6"/></svg>Статистика</button>
+    </nav>
+    <div class="side-foot">
+      Демо-режим: данные хранятся<br>в этом браузере (localStorage).<br><br>
+      <a href="info/tz.md" style="color:var(--indigo);font-weight:700">ТЗ проекта</a> ·
+      <a href="info/brandbook.md" style="color:var(--indigo);font-weight:700">Брендбук</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div>
+        <h1 id="hello">Привет, Анна!</h1>
+        <p id="subhello">Сегодня 3 задания ждут проверки</p>
+      </div>
+      <div class="spacer"></div>
+      <div class="role" id="roleSwitch">
+        <button data-role="parent" class="on">Родитель</button>
+        <button data-role="child">Ребёнок</button>
+      </div>
+      <div class="balance">
+        <span class="star">★</span>
+        <div><small id="balOwner">Баланс Миши</small><b id="bal">0</b></div>
+      </div>
+      <button class="btn" id="addBtn">+ Задание</button>
+    </div>
+
+    <!-- KANBAN -->
+    <section class="view on" id="view-board">
+      <div class="summary" id="summary"></div>
+      <div class="board" id="board"></div>
+      <div class="hint" id="roleHint"></div>
+    </section>
+
+    <!-- LIST -->
+    <section class="view" id="view-list">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Все задания</h2><p>Фильтры по ребёнку, метке и статусу. Экспорт — в CSV и JSON.</p></div>
+          <div class="spacer"></div>
+          <button class="btn ghost sm" id="exportCsv">CSV</button>
+          <button class="btn ghost sm" id="exportJson">JSON</button>
+        </div>
+        <div class="filters">
+          <select id="fChild"><option value="">Все дети</option></select>
+          <select id="fLabel"><option value="">Все метки</option></select>
+          <select id="fStatus">
+            <option value="">Любой статус</option>
+            <option value="new">Новые</option><option value="progress">В работе</option>
+            <option value="review">На проверке</option><option value="done">Готово</option>
+          </select>
+          <input id="fSearch" placeholder="Поиск по названию…">
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>Задание</th><th>Ребёнок</th><th>Метка</th><th>Дедлайн</th><th>Баллы</th><th>Статус</th><th></th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SHOP -->
+    <section class="view" id="view-shop">
+      <div class="panel">
+        <div class="panel-head">
+          <div><h2>Магазин подарков</h2><p>Обмен возможен только при достаточном балансе. Родитель может добавить подарок.</p></div>
+          <div class="spacer"></div>
+          <button class="btn sun sm" id="addReward">+ Подарок</button>
+        </div>
+        <div class="shop" id="shop"></div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="view" id="view-stats">
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><div><h2>Заработано по меткам</h2><p>Подтверждённые баллы за последние 30 дней</p></div></div>
+          <div class="bars" id="bars"></div>
+          <div class="legend" id="legend"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Прогресс недели</h2><p>Выполнено от всех заданий на этой неделе</p></div></div>
+          <div class="ring" id="ring"></div>
+          <div style="margin-top:18px" class="panel-head"><div><h2 style="font-size:14px">История баллов</h2></div></div>
+          <div class="feed" id="feed"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-head">
+          <div><h2>Служебное</h2><p>Сброс демо-данных и проверка состояния хранилища</p></div>
+          <div class="spacer"></div>
+          <button class="btn ghost sm" id="resetDemo">Сбросить демо-данные</button>
+        </div>
+        <div class="hint" id="storageInfo"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LABELS = {
+  study:{name:"Учёба", color:"#6C63FF"},
+  home:{name:"Дом", color:"#2EC4B6"},
+  sport:{name:"Спорт", color:"#FF6B6B"},
+  read:{name:"Чтение", color:"#F59E0B"},
+  behav:{name:"Поведение", color:"#8B5CF6"}
+};
+const KIDS = { misha:{name:"Миша", color:"#6C63FF", initial:"М"}, anya:{name:"Аня", color:"#2EC4B6", initial:"А"} };
+const STATUS = [
+  {id:"new", name:"Новые", color:"#6C63FF"},
+  {id:"progress", name:"В работе", color:"#F59E0B"},
+  {id:"review", name:"На проверке", color:"#FF6B6B"},
+  {id:"done", name:"Готово", color:"#2EC4B6"}
+];
+const KEY = "starquest.v1";
+
+const seed = () => ({
+  role:"parent",
+  activeKid:"misha",
+  tasks:[
+    {id:1,title:"Математика: №245–248",note:"Стр. 58, показать решение",points:15,child:"misha",label:"study",due:iso(1),status:"new"},
+    {id:2,title:"Собрать рюкзак на завтра",note:"Проверить дневник и сменку",points:5,child:"misha",label:"home",due:iso(0),status:"progress"},
+    {id:3,title:"Прочитать 12 страниц",note:"«Денискины рассказы»",points:10,child:"anya",label:"read",due:iso(2),status:"review"},
+    {id:4,title:"Полить цветы",note:"Все горшки на подоконнике",points:5,child:"misha",label:"home",due:iso(0),status:"review"},
+    {id:5,title:"Зарядка 15 минут",note:"Комплекс из памятки",points:8,child:"anya",label:"sport",due:iso(0),status:"done"},
+    {id:6,title:"Английский: слова Unit 4",note:"10 слов вслух",points:12,child:"misha",label:"study",due:iso(3),status:"done"}
+  ],
+  rewards:[
+    {id:1,title:"Поход в кино",cost:60,stock:2,emoji:"🎬"},
+    {id:2,title:"Час игры на планшете",cost:30,stock:5,emoji:"🎮"},
+    {id:3,title:"Любимая пицца",cost:45,stock:1,emoji:"🍕"},
+    {id:4,title:"Новая книга",cost:80,stock:1,emoji:"📚"}
+  ],
+  history:[
+    {id:1,type:"earn",points:8,title:"Зарядка 15 минут",kid:"anya",at:Date.now()-864e5},
+    {id:2,type:"earn",points:12,title:"Английский: слова Unit 4",kid:"misha",at:Date.now()-2*864e5},
+    {id:3,type:"spend",points:20,title:"Час игры на планшете",kid:"misha",at:Date.now()-3*864e5},
+    {id:4,type:"earn",points:25,title:"Помощь с ужином",kid:"misha",at:Date.now()-4*864e5}
+  ]
+});
+
+function iso(days){ const d=new Date(); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function uid(){ return Date.now()+Math.floor(Math.random()*999); }
+function load(){
+  try{ const raw=localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
+  return seed();
+}
+let state = load();
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function balance(kid){ return state.history.filter(h=>h.kid===kid).reduce((s,h)=>s+(h.type==="earn"?h.points:-h.points),0); }
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function toast(msg){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2600);
+}
+
+/* ---------- rendering ---------- */
+function render(){
+  const kid = state.activeKid;
+  const mine = state.tasks.filter(t=>t.child===kid);
+  const pending = mine.filter(t=>t.status==="review").length;
+  const weekDone = mine.filter(t=>t.status==="done").length;
+
+  $("#hello").textContent = state.role==="parent" ? "Привет, Анна!" : `Привет, ${KIDS[kid].name}!`;
+  $("#subhello").textContent = state.role==="parent"
+    ? (pending ? `Сегодня ${pending} ${plural(pending,"задание","задания","заданий")} ждёт проверки` : "Все задания проверены — можно выдохнуть")
+    : (pending ? `На проверке: ${pending}. Продолжай в том же духе!` : "Свободных заданий нет — отличная работа!");
+  $("#balOwner").textContent = "Баланс " + (kid==="misha"?"Миши":"Ани");
+  $("#bal").textContent = balance(kid);
+  $("#roleHint").textContent = state.role==="parent"
+    ? "Режим родителя: создавайте задания, подтверждайте выполнение и управляйте магазином. Перетащите карточку или используйте кнопки на карточке."
+    : "Режим ребёнка: берите задание в работу и отправляйте на проверку. Баллы начисляет родитель после подтверждения.";
+
+  renderSummary(mine);
+  renderBoard(mine);
+  renderTable();
+  renderShop();
+  renderStats(mine);
+  $("#addBtn").style.display = state.role==="parent" ? "" : "none";
+  $$("#nav button").forEach(b=>b.classList.toggle("on", b.dataset.view===state.view));
+}
+
+function plural(n,a,b,c){ const m=n%100, k=n%10; if(m>10&&m<20) return c; if(k===1) return a; if(k>=2&&k<=4) return b; return c; }
+
+function renderSummary(mine){
+  const earned = state.history.filter(h=>h.kid===state.activeKid && h.type==="earn")
+    .filter(h=>Date.now()-h.at < 7*864e5).reduce((s,h)=>s+h.points,0);
+  const review = mine.filter(t=>t.status==="review").length;
+  const done = mine.filter(t=>t.status==="done").length;
+  const active = mine.filter(t=>t.status==="progress").length;
+  $("#summary").innerHTML = `
+    <div class="stat"><span>Баланс звёзд</span><b>${balance(state.activeKid)}</b><em>+${earned} за неделю</em></div>
+    <div class="stat"><span>В работе</span><b>${active}</b><em>заданий в процессе</em></div>
+    <div class="stat ${review?"warn":""}"><span>Ждут проверки</span><b>${review}</b><em>${review?"нужно подтвердить":"очередь пуста"}</em></div>
+    <div class="stat"><span>Выполнено</span><b>${done}</b><em>всего по ребёнку</em></div>`;
+}
+
+function renderBoard(mine){
+  $("#board").innerHTML = STATUS.map(col=>{
+    const items = mine.filter(t=>t.status===col.id);
+    return `<div class="col" data-status="${col.id}">
+      <div class="col-head">
+        <span class="dot" style="background:${col.color}"></span>
+        <h3>${col.name}</h3><span class="count">${items.length}</span>
+      </div>
+      <div class="cards">${items.map(card).join("") || empty(col.id)}</div>
+    </div>`;
+  }).join("");
+  bindBoard();
+}
+
+function card(t){
+  const L = LABELS[t.label], K = KIDS[t.child];
+  const late = t.due && t.due < iso(0) && t.status!=="done";
+  let action = "";
+  if(state.role==="child"){
+    if(t.status==="new") action = `<button class="btn sun sm" data-act="take" data-id="${t.id}">Взять</button>`;
+    if(t.status==="progress") action = `<button class="btn sun sm" data-act="send" data-id="${t.id}">Готово</button>`;
+  }else{
+    if(t.status==="review") action = `<button class="btn sm" data-act="approve" data-id="${t.id}">Подтвердить</button>`;
+    if(t.status==="new") action = `<button class="btn ghost sm" data-act="take" data-id="${t.id}">В работу</button>`;
+    if(t.status==="done") action = `<button class="btn ghost sm" data-act="del" data-id="${t.id}">Удалить</button>`;
+  }
+  return `<article class="task" draggable="true" data-id="${t.id}">
+    <div class="task-top">
+      <span class="chip" style="background:${L.color}1f;color:${L.color}">${L.name}</span>
+      <span class="pts">★ ${t.points}</span>
+    </div>
+    <h4>${esc(t.title)}</h4>
+    ${t.note?`<p>${esc(t.note)}</p>`:""}
+    <div class="task-foot">
+      <span class="ava" style="background:${K.color}">${K.initial}</span>
+      <span class="due ${late?"late":""}">${t.due?fmtDate(t.due):"без срока"}</span>
+      ${action}
+    </div>
+  </article>`;
+}
+
+function fmtDate(s){
+  const d = new Date(s+"T00:00:00");
+  return d.toLocaleDateString("ru-RU",{day:"numeric",month:"short"});
+}
+
+function empty(status){
+  if(state.role==="parent" && status==="new") return `<div class="empty">Нет новых заданий.<br>Нажмите «+ Задание».</div>`;
+  return `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l2.4 5.2 5.6.7-4.1 3.9 1 5.6-4.9-2.7-4.9 2.7 1-5.6L4 8.9l5.6-.7z"/></svg>Пока пусто</div>`;
+}
+
+function bindBoard(){
+  $$(".task").forEach(el=>{
+    el.addEventListener("dragstart",e=>{
+      el.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", el.dataset.id);
+      e.dataTransfer.effectAllowed="move";
+    });
+    el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+  });
+  $$(".col").forEach(col=>{
+    col.addEventListener("dragover",e=>{e.preventDefault(); col.classList.add("over");});
+    col.addEventListener("dragleave",()=>col.classList.remove("over"));
+    col.addEventListener("drop",e=>{
+      e.preventDefault(); col.classList.remove("over");
+      const id = +e.dataTransfer.getData("text/plain");
+      move(id, col.dataset.status);
+    });
+  });
+  $$("[data-act]").forEach(b=>b.addEventListener("click",e=>{
+    e.stopPropagation();
+    const {act,id} = b.dataset;
+    if(act==="del") return removeTask(+id);
+    if(act==="approve") return approve(+id);
+    if(act==="take") return move(+id,"progress");
+    if(act==="send") return move(+id,"review");
+  }));
+}
+
+function move(id,status){
+  const t = state.tasks.find(x=>x.id===id); if(!t || t.status===status) return;
+  if(status==="done" && t.status!=="review"){ toast("Сначала отправьте задание на проверку"); return; }
+  if(status==="review" && state.role==="parent" && t.status==="progress"){
+    // parent may accept on behalf of child — allowed, log it
+  }
+  if(status==="review"){ t.status="review"; save(); render(); toast("Отправлено на проверку родителю"); return; }
+  if(status==="done"){ return approve(id); }
+  t.status = status; save(); render();
+}
+
+function approve(id){
+  const t = state.tasks.find(x=>x.id===id); if(!t) return;
+  if(state.role!=="parent"){ toast("Подтвердить может только родитель"); return; }
+  if(t.status!=="review"){ toast("Задание ещё не на проверке"); return; }
+  t.status="done";
+  state.history.unshift({id:uid(),type:"earn",points:t.points,title:t.title,kid:t.child,at:Date.now()});
+  save(); render(); toast(`Подтверждено: +${t.points} ★`);
+}
+
+function removeTask(id){
+  const t = state.tasks.find(x=>x.id===id); if(!t) return;
+  if(!confirm(`Удалить задание «${t.title}»?`)) return;
+  state.tasks = state.tasks.filter(x=>x.id!==id); save(); render(); toast("Задание удалено");
+}
+
+/* ---------- table ---------- */
+function renderTable(){
+  const fc=$("#fChild"), fl=$("#fLabel");
+  if(fc.options.length<=1){
+    fc.innerHTML = `<option value="">Все дети</option>` + Object.entries(KIDS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+    fl.innerHTML = `<option value="">Все метки</option>` + Object.entries(LABELS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+  }
+  const q=$("#fSearch").value.trim().toLowerCase();
+  const rows = state.tasks.filter(t=>
+    (!fc.value || t.child===fc.value) &&
+    (!fl.value || t.label===fl.value) &&
+    (!$("#fStatus").value || t.status===$("#fStatus").value) &&
+    (!q || t.title.toLowerCase().includes(q))
+  );
+  const names = {new:"Новые",progress:"В работе",review:"На проверке",done:"Готово"};
+  $("#tableBody").innerHTML = rows.length ? rows.map(t=>`<tr>
+    <td><b>${esc(t.title)}</b><div style="color:var(--muted);font-size:11.5px">${esc(t.note||"")}</div></td>
+    <td>${KIDS[t.child].name}</td>
+    <td><span class="chip" style="background:${LABELS[t.label].color}1f;color:${LABELS[t.label].color}">${LABELS[t.label].name}</span></td>
+    <td>${t.due?fmtDate(t.due):"—"}</td>
+    <td><b>★ ${t.points}</b></td>
+    <td><span class="status s-${t.status}">${names[t.status]}</span></td>
+    <td style="text-align:right"><button class="btn ghost sm" data-edit="${t.id}">Изменить</button></td>
+  </tr>`).join("") : `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">Ничего не найдено</td></tr>`;
+  $$("[data-edit]").forEach(b=>b.addEventListener("click",()=>openTask(+b.dataset.edit)));
+}
+
+/* ---------- shop ---------- */
+function renderShop(){
+  const kid=state.activeKid, bal=balance(kid);
+  $("#shop").innerHTML = state.rewards.map(r=>{
+    const can = bal>=r.cost && r.stock>0;
+    return `<div class="reward ${r.stock?"":"out"}">
+      <span class="emoji">${r.emoji}</span>
+      <h4>${esc(r.title)}</h4>
+      <span class="cost">★ ${r.cost}</span>
+      <span class="stock">${r.stock?`осталось ${r.stock}`:"закончился"}</span>
+      <button class="btn ${can?"sun":"ghost"} sm" data-buy="${r.id}" ${can?"":"disabled"}>
+        ${r.stock? (bal<r.cost?`не хватает ${r.cost-bal} ★`:"Обменять"):"Нет в наличии"}
+      </button>
+    </div>`;
+  }).join("");
+  $$("[data-buy]").forEach(b=>b.addEventListener("click",()=>buy(+b.dataset.buy)));
+}
+
+function buy(id){
+  const r = state.rewards.find(x=>x.id===id); if(!r) return;
+  const kid = state.activeKid;
+  if(state.role!=="parent" && state.role!=="child") return;
+  if(r.stock<=0) return toast("Подарок закончился");
+  if(balance(kid)<r.cost) return toast("Недостаточно звёзд");
+  r.stock--;
+  state.history.unshift({id:uid(),type:"spend",points:r.cost,title:r.title,kid,at:Date.now()});
+  save(); render(); toast(`Обменяно: ${r.title} (−${r.cost} ★)`);
+}
+
+/* ---------- stats ---------- */
+function renderStats(mine){
+  const since = Date.now()-30*864e5;
+  const sums = {};
+  state.history.filter(h=>h.type==="earn" && h.at>=since).forEach(h=>{
+    const t = state.tasks.find(t=>t.title===h.title);
+    const key = t?t.label:"behav";
+    sums[key]=(sums[key]||0)+h.points;
+  });
+  const entries = Object.entries(sums).sort((a,b)=>b[1]-a[1]);
+  const max = Math.max(10, ...entries.map(e=>e[1]));
+  $("#bars").innerHTML = entries.length ? entries.map(([k,v])=>`
+    <div class="bar"><b>${v}</b><i style="height:${Math.max(4,(v/max)*100)}%;background:linear-gradient(180deg,${LABELS[k].color},${LABELS[k].color}aa)"></i><span>${LABELS[k].name}</span></div>
+  `).join("") : `<div class="empty" style="margin:auto">Пока нет подтверждённых баллов</div>`;
+  $("#legend").innerHTML = entries.map(([k,v])=>`<span><i style="background:${LABELS[k].color}"></i>${LABELS[k].name} — ${v} ★</span>`).join("");
+
+  const total = mine.length || 1;
+  const done = mine.filter(t=>t.status==="done").length;
+  const pct = Math.round(done/total*100);
+  const C = 2*Math.PI*42;
+  $("#ring").innerHTML = `
+    <svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="42" fill="none" stroke="#F0EADF" stroke-width="11"/>
+      <circle cx="52" cy="52" r="42" fill="none" stroke="url(#gg)" stroke-width="11" stroke-linecap="round"
+        stroke-dasharray="${C}" stroke-dashoffset="${C-(C*pct/100)}" transform="rotate(-90 52 52)"/>
+      <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6C63FF"/><stop offset="1" stop-color="#2EC4B6"/></linearGradient></defs>
+      <text x="52" y="58" text-anchor="middle" font-size="19" font-weight="800" fill="#1B2A41">${pct}%</text>
+    </svg>
+    <div><strong>${done} из ${mine.length}</strong><small>заданий выполнено<br>по текущему списку</small></div>`;
+
+  $("#feed").innerHTML = state.history.slice(0,7).map(h=>`
+    <div><span class="ava" style="background:${KIDS[h.kid].color};width:22px;height:22px;font-size:10px">${KIDS[h.kid].initial}</span>
+    <span>${esc(h.title)}<br><small style="color:var(--muted);font-size:10.5px">${new Date(h.at).toLocaleDateString("ru-RU")}</small></span>
+    <b class="${h.type==="earn"?"plus":"minus"}">${h.type==="earn"?"+":"−"}${h.points} ★</b></div>`).join("") || `<div class="empty">История пуста</div>`;
+
+  $("#storageInfo").textContent = `Ключ localStorage: ${KEY}. Заданий: ${state.tasks.length}. Записей истории: ${state.history.length}. Подарков: ${state.rewards.length}.`;
+}
+
+/* ---------- modal ---------- */
+function closeModal(){ $("#backdrop").classList.remove("open"); }
+
+function openTask(id){
+  if(state.role!=="parent") return toast("Создавать и менять задания может родитель");
+  const t = id ? state.tasks.find(x=>x.id===id) : null;
+  $("#modal").innerHTML = `
+    <h3>${t?"Изменить задание":"Новое задание"}</h3>
+    <p class="sub">Баллы начислятся ребёнку только после подтверждения родителем.</p>
+    <div class="fields">
+      <div class="field full"><label>Название</label><input id="mTitle" value="${t?esc(t.title):""}" placeholder="Например, разобрать портфель"></div>
+      <div class="field full"><label>Описание</label><textarea id="mNote" rows="2" placeholder="Что именно нужно сделать">${t?esc(t.note||""):""}</textarea></div>
+      <div class="field"><label>Баллы</label><input id="mPoints" type="number" min="1" max="200" value="${t?t.points:10}"></div>
+      <div class="field"><label>Ребёнок</label><select id="mChild">${Object.entries(KIDS).map(([k,v])=>`<option value="${k}" ${t&&t.child===k?"selected":""}>${v.name}</option>`).join("")}</select></div>
+      <div class="field"><label>Метка</label><select id="mLabel">${Object.entries(LABELS).map(([k,v])=>`<option value="${k}" ${t&&t.label===k?"selected":""}>${v.name}</option>`).join("")}</select></div>
+      <div class="field"><label>Дедлайн</label><input id="mDue" type="date" value="${t?t.due||"":iso(1)}"></div>
+    </div>
+    <div class="modal-foot">
+      ${t?`<button class="btn ghost" id="mDel" style="margin-right:auto;color:var(--coral)">Удалить</button>`:""}
+      <button class="btn ghost" id="mCancel">Отмена</button>
+      <button class="btn" id="mSave">${t?"Сохранить":"Создать"}</button>
+    </div>`;
+  $("#backdrop").classList.add("open");
+  $("#mCancel").onclick = closeModal;
+  $("#mSave").onclick = ()=>{
+    const title=$("#mTitle").value.trim();
+    if(!title) return toast("Введите название задания");
+    const pts = Math.max(1, Math.min(200, +$("#mPoints").value||10));
+    const data = {title, note:$("#mNote").value.trim(), points:pts, child:$("#mChild").value, label:$("#mLabel").value, due:$("#mDue").value};
+    if(t) Object.assign(t, data);
+    else state.tasks.unshift({id:uid(), status:"new", ...data});
+    save(); closeModal(); render(); toast(t?"Задание обновлено":"Задание создано");
+  };
+  if(t) $("#mDel").onclick = ()=>{ closeModal(); removeTask(t.id); };
+  $("#mTitle").focus();
+}
+
+function openReward(){
+  $("#modal").innerHTML = `
+    <h3>Новый подарок</h3>
+    <p class="sub">Подарок появится в магазине у всех детей.</p>
+    <div class="fields">
+      <div class="field full"><label>Название</label><input id="rTitle" placeholder="Например, поход в батутный центр"></div>
+      <div class="field"><label>Стоимость, ★</label><input id="rCost" type="number" min="1" value="40"></div>
+      <div class="field"><label>Количество</label><input id="rStock" type="number" min="1" value="1"></div>
+      <div class="field"><label>Эмодзи</label><input id="rEmoji" value="🎁" maxlength="4"></div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" id="rCancel">Отмена</button><button class="btn sun" id="rSave">Добавить</button></div>`;
+  $("#backdrop").classList.add("open");
+  $("#rCancel").onclick=closeModal;
+  $("#rSave").onclick=()=>{
+    const title=$("#rTitle").value.trim(); if(!title) return toast("Введите название");
+    state.rewards.push({id:uid(),title,cost:Math.max(1,+$("#rCost").value||10),stock:Math.max(1,+$("#rStock").value||1),emoji:$("#rEmoji").value||"🎁"});
+    save(); closeModal(); render(); toast("Подарок добавлен");
+  };
+  $("#rTitle").focus();
+}
+
+/* ---------- export ---------- */
+function download(name, text, type){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\ufeff"+text],{type}));
+  a.download=name; a.click(); URL.revokeObjectURL(a.href);
+}
+function csv(){
+  const head=["Задание","Ребёнок","Метка","Дедлайн","Баллы","Статус"];
+  const rows=state.tasks.map(t=>[t.title,KIDS[t.child].name,LABELS[t.label].name,t.due||"",t.points,t.status]);
+  return [head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+}
+
+/* ---------- init ---------- */
+$("#nav").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-view]"); if(!b) return;
+  state.view=b.dataset.view; save();
+  $$(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+b.dataset.view));
+  $$("#nav button").forEach(x=>x.classList.toggle("on",x===b));
+  render();
+});
+$("#roleSwitch").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-role]"); if(!b) return;
+  state.role=b.dataset.role; save();
+  $$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x===b));
+  render();
+});
+$("#addBtn").onclick=()=>openTask(null);
+$("#addReward").onclick=openReward;
+$("#fChild").onchange=renderTable; $("#fLabel").onchange=renderTable;
+$("#fStatus").onchange=renderTable; $("#fSearch").oninput=renderTable;
+$("#exportCsv").onclick=()=>{download("starquest-tasks.csv",csv(),"text/csv;charset=utf-8"); toast("CSV выгружен");};
+$("#exportJson").onclick=()=>{download("starquest-data.json",JSON.stringify(state,null,2),"application/json"); toast("JSON выгружен");};
+$("#resetDemo").onclick=()=>{ if(confirm("Сбросить все данные и вернуть демо-набор?")){ state=seed(); state.view="stats"; save(); render(); toast("Демо-данные восстановлены"); } };
+$("#backdrop").addEventListener("click",e=>{ if(e.target.id==="backdrop") closeModal(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+
+state.view = state.view || "board";
+$$(".view").forEach(v=>v.classList.toggle("on", v.id==="view-"+state.view));
+$$("#roleSwitch button").forEach(x=>x.classList.toggle("on",x.dataset.role===state.role));
+render();
+</script>
+</body>
+</html>

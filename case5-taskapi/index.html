@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaskAPI — бэкенд трекера задач</title>
+<link rel="icon" href="info/logo.svg">
+<style>
+  :root{
+    --night:#0C0D12; --panel:#15171F; --panel2:#1C1F29; --violet:#8B5CF6;
+    --lime:#A3E635; --sky:#38BDF8; --amber:#F59E0B; --red:#EF4444;
+    --text:#E5E7EB; --muted:#8B90A0; --line:#2A2E3A; --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:Inter,"Segoe UI",system-ui,sans-serif; background:#F4F4F7; color:#16181F; font-size:14px; -webkit-font-smoothing:antialiased}
+  button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  input,select,textarea{font:inherit;color:inherit}
+  h1,h2,h3{margin:0;letter-spacing:-.02em}
+  code,pre,.mono{font-family:"JetBrains Mono",ui-monospace,Consolas,monospace}
+  .app{display:grid;grid-template-columns:1fr 420px;min-height:100vh}
+  .main{padding:20px 24px 40px;min-width:0}
+
+  .top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .top img{width:38px;height:38px}
+  .top h1{font-size:21px;font-weight:800}
+  .top .sub{font-size:12px;color:#6B7180;margin-top:2px}
+  .grow{flex:1}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;background:#16181F;color:#fff;font-weight:700;font-size:12px;min-height:38px}
+  .btn:hover{background:#2A2E3A}
+  .btn.ghost{background:#fff;border:1px solid #E2E3E8;color:#16181F}
+  .btn.ghost:hover{border-color:var(--violet);color:var(--violet)}
+  .btn.lime{background:var(--lime);color:#1A2500}
+  .btn.sm{padding:6px 10px;font-size:11px;min-height:32px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  .card{background:#fff;border:1px solid #E5E6EB;border-radius:var(--r);padding:16px}
+  .card-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .card-h h2{font-size:14px;font-weight:800}
+  .card-h p{font-size:11.5px;color:#6B7180;margin:1px 0 0}
+  .card-h .btn{margin-left:auto}
+
+  .endpoint{display:flex;align-items:center;gap:9px;padding:10px;border-radius:9px;border:1px solid #ECEDF1;margin-bottom:7px;cursor:pointer;transition:.14s;background:#fff}
+  .endpoint:hover{border-color:#C9B8FA;background:#FBF9FF}
+  .endpoint.on{border-color:var(--violet);background:#F7F3FF}
+  .m{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:5px;min-width:56px;text-align:center;letter-spacing:.02em}
+  .m-get{background:#E0F5FE;color:#0369A1}
+  .m-post{background:#EDE9FE;color:#6D28D9}
+  .m-patch{background:#FEF3C7;color:#92400E}
+  .m-delete{background:#FEE2E2;color:#B91C1C}
+  .path{font-family:"JetBrains Mono",monospace;font-size:11.5px;font-weight:600}
+  .desc{font-size:10.5px;color:#8A90A0;margin-left:auto;text-align:right;max-width:180px;line-height:1.3}
+
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px}
+  .f{display:flex;flex-direction:column;gap:4px}
+  .f.full{grid-column:1/-1}
+  .f label{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#8A90A0}
+  .f input,.f select,.f textarea{border:1px solid #E2E3E8;border-radius:7px;padding:8px 9px;font-size:12px;background:#FBFBFC;outline:none}
+  .f input:focus,.f select:focus,.f textarea:focus{border-color:var(--violet);background:#fff}
+  .f textarea{font-family:"JetBrains Mono",monospace;font-size:11.5px;line-height:1.5}
+
+  /* console */
+  .console{background:var(--night);color:var(--text);padding:20px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh;overflow:auto}
+  .console-h{display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .console-h b{font-size:13px;color:#fff}
+  .console-h span{font-size:10px;color:var(--muted);margin-left:auto;font-family:"JetBrains Mono",monospace}
+  .dots{display:flex;gap:5px}
+  .dots i{width:9px;height:9px;border-radius:50%;background:#3A3F4E;display:block}
+  .dots i:first-child{background:#EF4444}.dots i:nth-child(2){background:#F59E0B}.dots i:nth-child(3){background:#22C55E}
+  .reqline{display:flex;gap:7px;align-items:center;font-family:"JetBrains Mono",monospace;font-size:11.5px;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:9px 10px}
+  .reqline .code{color:var(--lime);font-weight:800;font-size:10px}
+  .resp{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .resp-h{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--line);font-size:10.5px;color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .status{font-size:10px;font-weight:800;padding:2px 7px;border-radius:4px;background:#22301A;color:var(--lime);font-family:"JetBrains Mono",monospace}
+  .status.err{background:#331C1C;color:#FCA5A5}
+  .resp pre{margin:0;padding:12px;font-size:11px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#C8CEDA;max-height:250px;overflow:auto}
+  .resp pre .k{color:#93C5FD} .resp pre .s{color:#A3E635} .resp pre .n{color:#FBBF24}
+  .log{display:flex;flex-direction:column;gap:5px;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--muted)}
+  .log div{display:flex;gap:7px;padding:5px 0;border-bottom:1px solid #1E222C}
+  .log b{margin-left:auto;color:#C8CEDA}
+
+  .tests{display:flex;flex-direction:column;gap:6px}
+  .test{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:8px 9px;border-radius:7px;background:#FAFAFC;border:1px solid #ECEDF1}
+  .test .ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:900;color:#fff;background:#22C55E;flex:none}
+  .test .nm{flex:1;text-align:left}
+  .test.fail .ic{background:#EF4444}
+  .test .st{color:#8A90A0;font-size:10px;font-family:"JetBrains Mono",monospace}
+  .tw{overflow:auto;margin:0 -16px -16px;padding:0 16px 4px}
+  table{width:100%;border-collapse:collapse;font-size:11.5px;min-width:560px}
+  th{text-align:left;padding:7px 8px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#8A90A0;border-bottom:1px solid #E5E6EB;white-space:nowrap;font-weight:800}
+  td{padding:8px;border-bottom:1px solid #F1F2F5;vertical-align:middle}
+  tbody tr:hover td{background:#FAFAFC}
+  .pill{font-size:9.5px;font-weight:800;padding:2px 6px;border-radius:4px;white-space:nowrap}
+  .p-todo{background:#EFF1F5;color:#4B5563}.p-progress{background:#FEF3C7;color:#92400E}
+  .p-review{background:#EDE9FE;color:#6D28D9}.p-done{background:#DCFCE7;color:#166534}
+  .schema{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .schema .box{background:#FBFBFC;border:1px solid #ECEDF1;border-radius:9px;padding:11px}
+  .schema h4{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#8A90A0;margin:0 0 6px}
+  .schema code{font-size:10.5px;display:block;line-height:1.7;color:#3F4655}
+  .schema code b{color:var(--violet)}
+  .view{display:none}.view.on{display:block}
+  .tabs{display:flex;gap:4px;margin-bottom:14px;background:#fff;border:1px solid #E5E6EB;border-radius:9px;padding:3px;width:fit-content}
+  .tabs button{padding:7px 12px;border-radius:7px;font-size:11.5px;font-weight:700;color:#6B7180}
+  .tabs button.on{background:#16181F;color:#fff}
+  .note{font-size:11px;color:#6B7180;background:#FBFBFC;border:1px dashed #E2E3E8;border-radius:8px;padding:10px;line-height:1.55;margin-top:12px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,16px);opacity:0;background:#16181F;color:#fff;padding:10px 17px;border-radius:8px;font-size:12px;font-weight:600;transition:.22s;z-index:60;pointer-events:none}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:1000px){
+    .app{grid-template-columns:1fr}
+    .console{position:static;height:auto}
+    .main{padding:14px 12px 30px}
+  }
+  @media (max-width:560px){ .fields,.schema{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<div class="app">
+  <main class="main">
+    <div class="top">
+      <img src="info/logo.svg" alt="">
+      <div><h1>TaskAPI</h1><div class="sub">Бэкенд трекера задач · контракт и песочница</div></div>
+      <div class="grow"></div>
+      <button class="btn ghost sm" id="reset">Сбросить</button>
+      <button class="btn lime sm" id="runAll">Прогнать тесты</button>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button data-view="explorer" class="on">API Explorer</button>
+      <button data-view="tasks">Задачи</button>
+      <button data-view="schema">Схема</button>
+      <button data-view="tests">Тесты</button>
+    </div>
+
+    <!-- EXPLORER -->
+    <section class="view on" id="view-explorer">
+      <div class="card">
+        <div class="card-h"><div><h2>Эндпоинты</h2><p>Выберите метод, заполните параметры и отправьте запрос</p></div>
+          <span class="pill p-todo" id="rolePill">admin</span>
+        </div>
+        <div id="endpoints"></div>
+        <div class="fields" id="form"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn" id="send">Отправить запрос</button>
+          <button class="btn ghost sm" id="clearLog">Очистить лог</button>
+          <span style="font-size:11px;color:#8A90A0">Ответ появится в консоли справа</span>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-h"><div><h2>Тесты контракта</h2><p>Проверки валидации, прав и статусной модели</p></div><button class="btn ghost sm" id="runAll2">Запустить</button></div>
+        <div class="tests" id="testsBox"></div>
+      </div>
+    </section>
+
+    <!-- TASKS -->
+    <section class="view" id="view-tasks">
+      <div class="card">
+        <div class="card-h"><div><h2>Задачи</h2><p>Актуальное состояние хранилища</p></div>
+          <button class="btn ghost sm" id="exportSchema">Экспорт схемы</button></div>
+        <div class="tw"><table><thead><tr><th>ID</th><th>Задача</th><th>Автор</th><th>Статус</th><th>Приоритет</th><th>Создана</th></tr></thead>
+        <tbody id="taskBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- SCHEMA -->
+    <section class="view" id="view-schema">
+      <div class="card">
+        <div class="card-h"><div><h2>Модель данных</h2><p>Поля, типы и ограничения</p></div></div>
+        <div class="schema">
+          <div class="box"><h4>Task</h4><code>
+            <b>id</b>: integer, read-only<br>
+            <b>title</b>: string, 3–120, required<br>
+            <b>description</b>: string, ≤ 1000<br>
+            <b>status</b>: enum(todo|progress|review|done)<br>
+            <b>priority</b>: enum(low|mid|high)<br>
+            <b>author</b>: string, read-only<br>
+            <b>createdAt</b>: ISO date, read-only
+          </code></div>
+          <div class="box"><h4>Comment</h4><code>
+            <b>id</b>: integer<br>
+            <b>taskId</b>: integer<br>
+            <b>text</b>: string, 1–500, required<br>
+            <b>author</b>: string<br>
+            <b>at</b>: ISO date
+          </code></div>
+          <div class="box"><h4>Переходы статусов</h4><code>
+            todo → progress<br>
+            progress → review<br>
+            review → done<br>
+            review → progress (возврат)<br>
+            <span style="color:#B91C1C">todo → done запрещён (422)</span>
+          </code></div>
+          <div class="box"><h4>Права</h4><code>
+            admin: всё<br>
+            member: create / patch / comment<br>
+            viewer: только GET<br>
+            <span style="color:#B91C1C">мутации → 403</span>
+          </code></div>
+        </div>
+        <div class="note">Реализация в браузере повторяет контракт, чтобы клиент и сервер договорились до написания кода. В боевой версии — Java/Spring Boot, PostgreSQL, JWT.</div>
+      </div>
+    </section>
+
+    <!-- TESTS -->
+    <section class="view" id="view-tests">
+      <div class="card">
+        <div class="card-h"><div><h2>Проверки</h2><p>8 сценариев, которые должны проходить на демо-данных</p></div>
+          <button class="btn lime sm" id="runAll3">Запустить все</button></div>
+        <div class="tests" id="testsBox2"></div>
+        <div class="note" id="testSummary"></div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="console">
+    <div class="console-h">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <b>Console</b><span id="reqCount">0 requests</span>
+    </div>
+    <div class="reqline"><span class="code" id="cMethod">GET</span><span id="cPath">/tasks</span></div>
+    <div class="resp">
+      <div class="resp-h"><span class="status" id="cStatus">200 OK</span><span id="cTime">— ms</span><span style="margin-left:auto" id="cSize">— B</span></div>
+      <pre id="cBody">// Выберите эндпоинт и нажмите «Отправить запрос»</pre>
+    </div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:800">Журнал</div>
+    <div class="log" id="log"></div>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="taskapi.v1";
+const ST=["todo","progress","review","done"];
+const PR=["low","mid","high"];
+const TRANS={todo:["progress"],progress:["review"],review:["done","progress"],done:[]};
+const EPS=[
+  {m:"GET",p:"/tasks",d:"Список задач с фильтрами",fields:[{k:"status",label:"status",type:"select",opts:["","todo","progress","review","done"]}]},
+  {m:"GET",p:"/tasks/:id",d:"Одна задача по id",fields:[{k:"id",label:"id",type:"number",val:1}]},
+  {m:"POST",p:"/tasks",d:"Создать задачу",fields:[{k:"title",label:"title",type:"text",val:"Новая задача"},{k:"priority",label:"priority",type:"select",opts:PR,val:"mid"},{k:"description",label:"description",type:"text",val:""}]},
+  {m:"PATCH",p:"/tasks/:id",d:"Изменить статус или поля",fields:[{k:"id",label:"id",type:"number",val:1},{k:"status",label:"status",type:"select",opts:["","todo","progress","review","done"],val:"progress"}]},
+  {m:"POST",p:"/tasks/:id/comments",d:"Добавить комментарий",fields:[{k:"id",label:"id",type:"number",val:1},{k:"text",label:"text",type:"text",val:"Уточните дедлайн"}]},
+  {m:"DELETE",p:"/tasks/:id",d:"Удалить задачу (admin)",fields:[{k:"id",label:"id",type:"number",val:1}]}
+];
+const TESTS=[
+  {n:"POST /tasks без title → 400",run:()=>api("POST","/tasks",{priority:"mid"},{}).code===400},
+  {n:"POST /tasks с коротким title → 400",run:()=>api("POST","/tasks",{title:"ab"},{}).code===400},
+  {n:"POST /tasks создаёт задачу → 201",run:()=>{const r=api("POST","/tasks",{title:"Тестовая задача",priority:"low"},{});return r.code===201&&r.body.id>0;}},
+  {n:"GET /tasks?status=progress фильтрует",run:()=>{const r=api("GET","/tasks?status=progress",null,{});return r.code===200&&r.body.every(t=>t.status==="progress");}},
+  {n:"PATCH todo → done запрещён → 422",run:()=>{const t=store.tasks.find(x=>x.status==="todo");return api("PATCH","/tasks/"+t.id,{status:"done"},{}).code===422;}},
+  {n:"PATCH progress → review разрешён → 200",run:()=>{const t=store.tasks.find(x=>x.status==="progress");return api("PATCH","/tasks/"+t.id,{status:"review"},{}).code===200;}},
+  {n:"DELETE под viewer → 403",run:()=>api("DELETE","/tasks/1",null,{role:"viewer"}).code===403},
+  {n:"GET /tasks/999 → 404",run:()=>api("GET","/tasks/999",null,{}).code===404}
+];
+
+function seed(){
+  return {
+    role:"admin", view:"explorer", ep:0,
+    tasks:[
+      {id:1,title:"Настроить CI/CD",description:"GitHub Actions + деплой на VPS",status:"progress",priority:"high",author:"anna",createdAt:"2026-10-10"},
+      {id:2,title:"Описать контракт API",description:"OpenAPI 3.1, все эндпоинты",status:"review",priority:"high",author:"ivan",createdAt:"2026-10-11"},
+      {id:3,title:"Добавить пагинацию",description:"limit/offset, максимум 100",status:"todo",priority:"mid",author:"ivan",createdAt:"2026-10-12"},
+      {id:4,title:"Покрыть тестами",description:"Минимум 8 сценариев",status:"todo",priority:"low",author:"olga",createdAt:"2026-10-13"},
+      {id:5,title:"Ревью модели данных",description:"Проверить индексы",status:"done",priority:"mid",author:"anna",createdAt:"2026-10-09"}
+    ],
+    comments:[{id:1,taskId:1,text:"Нужен staging",author:"ivan",at:"2026-10-12"}],
+    log:[]
+  };
+}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return seed();}
+let store=load();
+let sandbox=false;
+const save=()=>{ if(!sandbox) localStorage.setItem(KEY,JSON.stringify(store)); };
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2300);}
+
+/* ---------- mini API ---------- */
+function api(method,path,body,ctx={}){
+  const role=ctx.role||store.role;
+  const start=performance.now();
+  const url=new URL("http://api.local"+path);
+  const parts=url.pathname.split("/").filter(Boolean);
+  const res=(code,payload)=>({code,body:payload,ms:Math.max(1,Math.round(performance.now()-start))});
+
+  if(parts[0]!=="tasks") return res(404,{error:"Not found"});
+  if(method!=="GET"&&role==="viewer") return res(403,{error:"Forbidden",detail:"Роль viewer не может изменять данные"});
+
+  const id=parts[1]?+parts[1]:null;
+
+  if(method==="GET"&&!id){
+    let list=store.tasks;
+    const st=url.searchParams.get("status");
+    if(st) list=list.filter(t=>t.status===st);
+    return res(200,list);
+  }
+  if(method==="GET"&&id){
+    const t=store.tasks.find(x=>x.id===id);
+    return t?res(200,t):res(404,{error:"Task not found",id});
+  }
+  if(method==="POST"&&!id){
+    if(!body||typeof body.title!=="string"||body.title.trim().length<3) return res(400,{error:"Validation failed",fields:{title:"минимум 3 символа"}});
+    if(body.title.length>120) return res(400,{error:"Validation failed",fields:{title:"максимум 120 символов"}});
+    if(body.priority&&!PR.includes(body.priority)) return res(400,{error:"Validation failed",fields:{priority:"low|mid|high"}});
+    const t={id:Math.max(0,...store.tasks.map(x=>x.id))+1,title:body.title.trim(),description:body.description||"",
+      status:"todo",priority:body.priority||"mid",author:ctx.author||"ivan",createdAt:new Date().toISOString().slice(0,10)};
+    store.tasks.push(t); save();
+    return res(201,t);
+  }
+  if(method==="POST"&&id&&parts[2]==="comments"){
+    const t=store.tasks.find(x=>x.id===id);
+    if(!t) return res(404,{error:"Task not found"});
+    if(!body||!body.text||body.text.length>500) return res(400,{error:"Validation failed",fields:{text:"1–500 символов"}});
+    const c={id:store.comments.length+1,taskId:id,text:body.text,author:ctx.author||"ivan",at:new Date().toISOString().slice(0,10)};
+    store.comments.push(c); save();
+    return res(201,c);
+  }
+  if(method==="PATCH"&&id){
+    const t=store.tasks.find(x=>x.id===id);
+    if(!t) return res(404,{error:"Task not found"});
+    if(body&&body.status){
+      if(!ST.includes(body.status)) return res(400,{error:"Validation failed",fields:{status:ST.join("|")}});
+      if(!TRANS[t.status].includes(body.status))
+        return res(422,{error:"Invalid transition",from:t.status,to:body.status,allowed:TRANS[t.status]});
+      t.status=body.status;
+    }
+    if(body&&body.title!==undefined){
+      if(String(body.title).trim().length<3) return res(400,{error:"Validation failed",fields:{title:"минимум 3 символа"}});
+      t.title=body.title;
+    }
+    if(body&&body.priority!==undefined){
+      if(!PR.includes(body.priority)) return res(400,{error:"Validation failed",fields:{priority:"low|mid|high"}});
+      t.priority=body.priority;
+    }
+    save();
+    return res(200,t);
+  }
+  if(method==="DELETE"&&id){
+    if(role!=="admin") return res(403,{error:"Forbidden",detail:"Удалять может только admin"});
+    const i=store.tasks.findIndex(x=>x.id===id);
+    if(i<0) return res(404,{error:"Task not found"});
+    store.tasks.splice(i,1); save();
+    return res(204,null);
+  }
+  return res(405,{error:"Method not allowed"});
+}
+
+/* ---------- explorer ---------- */
+function renderEndpoints(){
+  $("#endpoints").innerHTML=EPS.map((e,i)=>`<div class="endpoint ${i===store.ep?"on":""}" data-ep="${i}">
+    <span class="m m-${e.m.toLowerCase()}">${e.m}</span><span class="path">${e.p}</span><span class="desc">${e.d}</span></div>`).join("");
+  $$("[data-ep]").forEach(el=>el.onclick=()=>{store.ep=+el.dataset.ep;save();render();});
+  const ep=EPS[store.ep];
+  $("#form").innerHTML=ep.fields.map(f=>{
+    const val=f.val!==undefined?f.val:"";
+    if(f.type==="select") return `<div class="f"><label>${f.label}</label><select id="fld-${f.k}">${f.opts.map(o=>`<option ${String(o)===String(val)?"selected":""}>${o}</option>`).join("")}</select></div>`;
+    if(f.k==="description") return `<div class="f full"><label>${f.label}</label><textarea id="fld-${f.k}" rows="2">${esc(val)}</textarea></div>`;
+    return `<div class="f"><label>${f.label}</label><input id="fld-${f.k}" type="${f.type}" value="${esc(val)}"></div>`;
+  }).join("");
+  $("#rolePill").textContent=store.role;
+  $("#rolePill").className="pill "+(store.role==="admin"?"p-done":store.role==="member"?"p-progress":"p-todo");
+}
+
+function send(){
+  const ep=EPS[store.ep];
+  let path=ep.p;
+  const body={};
+  ep.fields.forEach(f=>{
+    const el=$("#fld-"+f.k); if(!el) return;
+    const v=el.value;
+    if(f.k==="id") path=path.replace(":id",v||"1");
+    else if(v!=="") body[f.k]=f.type==="number"?+v:v;
+  });
+  if(ep.m==="GET"&&body.status) path+=`?status=${body.status}`;
+  const res=api(ep.m,path,ep.m==="GET"||ep.m==="DELETE"?null:body,{});
+  showResponse(ep.m,path,res);
+  store.log.unshift({m:ep.m,p:path,code:res.code,ms:res.ms,at:Date.now()});
+  store.log=store.log.slice(0,12); save();
+  renderLog(); renderTasks(); renderTests();
+  toast(`${ep.m} ${path} → ${res.code}`);
+}
+
+function showResponse(m,p,res){
+  $("#cMethod").textContent=m;
+  $("#cPath").textContent=p;
+  $("#cStatus").textContent=`${res.code} ${statusText(res.code)}`;
+  $("#cStatus").className="status "+(res.code>=400?"err":"");
+  $("#cTime").textContent=res.ms+" ms";
+  const txt=res.body===null?"// 204 No Content":JSON.stringify(res.body,null,2);
+  $("#cSize").textContent=new Blob([txt]).size+" B";
+  $("#cBody").innerHTML=highlight(txt);
+  $("#reqCount").textContent=store.log.length+" requests";
+}
+
+function statusText(c){return {200:"OK",201:"Created",204:"No Content",400:"Bad Request",401:"Unauthorized",403:"Forbidden",404:"Not Found",405:"Method Not Allowed",422:"Unprocessable Entity"}[c]||"";}
+
+function highlight(t){
+  return esc(t)
+    .replace(/(&quot;[^&]*?&quot;)(\s*:)/g,'<span class="k">$1</span>$2')
+    .replace(/: (&quot;.*?&quot;)/g,': <span class="s">$1</span>')
+    .replace(/: (\d+(?:\.\d+)?)/g,': <span class="n">$1</span>');
+}
+
+function renderLog(){
+  $("#log").innerHTML=store.log.map(l=>`<div><span>${l.m}</span><span>${esc(l.p)}</span><b>${l.code}</b><span>${l.ms}ms</span></div>`).join("")||`<span style="font-size:10px">Пока пусто</span>`;
+  $("#reqCount").textContent=store.log.length+" requests";
+}
+
+function renderTasks(){
+  $("#taskBody").innerHTML=store.tasks.map(t=>`<tr>
+    <td class="mono" style="color:#8A90A0">#${t.id}</td>
+    <td><b>${esc(t.title)}</b><div style="font-size:10.5px;color:#8A90A0">${esc(t.description||"")}</div></td>
+    <td>${esc(t.author)}</td><td><span class="pill p-${t.status}">${t.status}</span></td>
+    <td>${t.priority}</td><td class="mono" style="font-size:10.5px;color:#8A90A0">${t.createdAt}</td></tr>`).join("");
+}
+
+function withSandbox(fn){
+  const snapshot=store;
+  store=JSON.parse(JSON.stringify(snapshot));
+  sandbox=true;
+  try{ return fn(); } finally { store=snapshot; sandbox=false; }
+}
+
+function renderTests(){
+  const results=TESTS.map(t=>{
+    try{ return withSandbox(t.run); }catch(e){ return false; }
+  });
+  const html=TESTS.map((t,i)=>`<div class="test ${results[i]?"":"fail"}"><span class="ic">${results[i]?"✓":"×"}</span><span class="nm">${esc(t.n)}</span><span class="st">${results[i]?"PASS":"FAIL"}</span></div>`).join("");
+  $("#testsBox").innerHTML=html; $("#testsBox2").innerHTML=html;
+  const passed=results.filter(Boolean).length;
+  $("#testSummary").textContent=`Пройдено ${passed} из ${TESTS.length}. Тесты выполняются на копии данных и не меняют ваши задачи.`;
+}
+
+function runAll(){
+  const results=TESTS.map(t=>{try{return withSandbox(t.run);}catch(e){return false;}});
+  const passed=results.filter(Boolean).length;
+  renderTests();
+  toast(`Тесты: ${passed} / ${TESTS.length} пройдено`);
+}
+
+function render(){
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+store.view));
+  $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.view===store.view));
+  renderEndpoints(); renderTasks(); renderLog(); renderTests();
+}
+
+/* ---------- events ---------- */
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-view]");if(!b)return;store.view=b.dataset.view;save();render();});
+$("#send").onclick=send;
+$("#clearLog").onclick=()=>{store.log=[];save();renderLog();toast("Журнал очищен");};
+$("#runAll").onclick=runAll; $("#runAll2").onclick=runAll; $("#runAll3").onclick=runAll;
+$("#reset").onclick=()=>{if(confirm("Сбросить данные и журнал?")){store=seed();save();render();showResponse("GET","/tasks",api("GET","/tasks"));toast("Сброшено");}};
+$("#exportSchema").onclick=()=>{
+  const schema={openapi:"3.1.0",info:{title:"TaskAPI",version:"1.0.0"},
+    paths:Object.fromEntries(EPS.map(e=>[e.p,{[e.m.toLowerCase()]:{summary:e.d}}]))};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(schema,null,2)],{type:"application/json"}));
+  a.download="taskapi-schema.json"; a.click(); URL.revokeObjectURL(a.href);
+  toast("Схема выгружена");
+};
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))send();});
+render();
+showResponse("GET","/tasks",api("GET","/tasks"));
+</script>
+</body>
+</html>
